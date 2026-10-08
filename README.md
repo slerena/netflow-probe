@@ -73,6 +73,20 @@ flujos (timeouts) ─▶ exportador NetFlow v9 (UDP) ─▶ Pandora FMS :9995
 
 Detalle de paquetes y flujo de datos en [docs/arquitectura.md](docs/arquitectura.md).
 
+## GUI de macOS (prueba de concepto)
+
+Interfaz de escritorio (Fyne) para usuarios no técnicos: elegir interfaz y
+colector, Iniciar/Detener y registro. Incluye el flujo de **permisos de macOS**
+(abre Ajustes del Sistema y permite conceder acceso a `/dev/bpf`).
+
+```sh
+make macapp
+open dist/NetFlowProbe.app
+```
+
+Ver [docs/gui-macos.md](docs/gui-macos.md). Requiere cgo y Xcode CLT; el resto
+del proyecto sigue siendo puro Go.
+
 ## Licencia
 
 GPL-2.0. Ver [LICENSE](LICENSE). Nota: el backend de Windows usa WinDivert, que

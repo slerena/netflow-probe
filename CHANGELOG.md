@@ -19,6 +19,9 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 - Unit tests for decoding, aggregation and NetFlow v9 serialisation.
 - Cross-platform Makefile (`make dist`) and GitLab CI.
 - Documentation: decisions, architecture, research notes, Windows install.
+- **macOS GUI (PoC)**: Fyne desktop app (`make macapp`) with a Pandora icon,
+  Start/Stop, status/log, and a macOS capture-permission flow (opens System
+  Settings and can grant `/dev/bpf` access with an admin prompt).
 
 ### Known gaps (roadmap)
 - Tray UI for non-technical users (Wails or Fyne).

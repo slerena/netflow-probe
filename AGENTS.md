@@ -22,6 +22,10 @@ UDP/9995). Target principal: **Windows**. Ver [README.md](README.md) y
   ```
 - No cambies el formato de export sin actualizar `docs/decisiones.md` (D4) y los
   tests de `internal/export`.
+- **Excepción cgo**: solo `cmd/netflow-probe-gui` (la GUI de macOS) usa cgo, y va
+  tras `//go:build darwin && cgo` con un *stub* para el resto. El core
+  (`internal/*`, `cmd/netflow-probe`) debe seguir siendo puro Go. La GUI se
+  empaqueta con `make macapp`; ver `docs/gui-macos.md`.
 
 ## Convenciones de Git
 
