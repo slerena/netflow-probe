@@ -33,10 +33,14 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
   Privacy toggle for packet capture.
 
 ### Fixed
-- macOS capture failing with `operation not supported by device` on the second
-  start: `gopacket/bsdbpf` mutates a package-level default when options are
-  `nil`, leaving `fd=0` on the next call. A fresh `bsdbpf.Options` is now passed
-  so the BPF device is picked on every call.
+- macOS capture is now implemented directly on `/dev/bpf*` instead of
+  `gopacket/bsdbpf`, which had three defects: it mutated a package-level default
+  (a second open used `fd=0` → `operation not supported by device`), it did not
+  retry reads interrupted by signals (`interrupted system call`), and it aligned
+  BPF records to 8 bytes while the kernel uses 4, corrupting multi-record
+  buffers (`corrupted BpfHdr struct`). The new reader retries on `EINTR`, uses
+  the correct 18-byte header and 4-byte alignment, and resynchronises on
+  malformed records.
 
 ### Known gaps (roadmap)
 - Tray UI for non-technical users (Wails or Fyne).
