@@ -36,26 +36,32 @@ open "dist/Pandora FMS Netflow Probe.app"
 
 ## Permisos (lo importante)
 
-macOS exige privilegios para capturar paquetes: hay que poder abrir los
-dispositivos **`/dev/bpf*`** (propiedad de `root`, modo `0600`). Sin eso, el
-arranque falla.
+Capturar tráfico en macOS exige poder abrir los dispositivos **`/dev/bpf*`**
+(propiedad de `root`, modo `0600`). **No hay ninguna casilla en Ajustes del
+Sistema para esto**: Acceso total al disco y demás permisos TCC no aplican a la
+captura, por eso la app **no aparece en ninguna lista de Privacidad y seguridad**.
 
-Si la app no consigue capturar, abre el diálogo **"Permisos de captura"** con dos
-acciones:
+Si la app no consigue capturar, abre el diálogo **"Permisos de captura"** con una
+única acción:
 
-- **Abrir Ajustes del Sistema** → abre *Ajustes del Sistema → Privacidad y
-  seguridad* (pane de **Acceso total al disco**). Se prueban varios esquemas de
-  URL porque Apple los cambió en versiones recientes.
-- **Conceder acceso a /dev/bpf (admin)** → pide tu contraseña de administrador
-  (aviso nativo de macOS) y ejecuta `chmod o+rw /dev/bpf*`. Es un atajo de PoC
-  para que la captura funcione ya. Tras concederlo, pulsa **Iniciar** otra vez.
+- **Conceder acceso a la captura** → pide tu contraseña de administrador (aviso
+  nativo de macOS) e instala un pequeño **LaunchDaemon**
+  (`/Library/LaunchDaemons/es.artica.netflowprobe.chmodbpf.plist`) que mantiene el
+  acceso a `/dev/bpf*` también tras reiniciar; además aplica el permiso de
+  inmediato y **reintenta la captura solo**.
 
-### Ruta recomendada en producción
+### Endurecimiento pendiente
 
-`chmod o+rw` es amplio (cualquier usuario podría capturar). La forma correcta es
-la de Wireshark: un **LaunchDaemon `ChmodBPF`** que crea un grupo dedicado
-(`access_bpf`), añade al usuario y ajusta `/dev/bpf*` al grupo. Queda como
+El acceso se concede con `chmod o+rw /dev/bpf*` (PoC: habilita "other"). Lo
+estricto sería un grupo dedicado (`access_bpf`) como hace Wireshark. Queda como
 trabajo de endurecimiento.
+
+## Bandeja (barra de menús)
+
+La app pone un **icono en la barra de menús** (glifo Pandora en gris) con este
+menú: **Mostrar / ocultar**, **Iniciar captura**, **Detener captura** y **Salir**.
+Cerrar la ventana **no cierra la app**: la oculta a la bandeja. Para terminar,
+usa **Salir** en el menú de la bandeja (o Cmd+Q).
 
 ## Limitaciones de la PoC
 

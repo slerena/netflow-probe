@@ -9,6 +9,7 @@ package main
 import (
 	"context"
 	_ "embed"
+	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
@@ -27,6 +28,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 
@@ -38,6 +40,9 @@ import (
 
 //go:embed icon.png
 var iconPNG []byte
+
+//go:embed tray.png
+var trayPNG []byte
 
 const configFileName = ".netflow-probe.yaml"
 
@@ -61,8 +66,9 @@ type gui struct {
 	startBtn      *widget.Button
 	spinner       *kittBar
 
-	sess    *session
-	running bool
+	sess       *session
+	running    bool
+	winVisible bool
 
 	exported atomic.Uint64
 	packets  atomic.Uint64
@@ -86,8 +92,49 @@ func main() {
 	g.win = a.NewWindow("Pandora FMS Netflow Probe")
 	g.buildUI()
 	g.loadConfig()
+	g.setupTray(a)
+	g.winVisible = true
 	g.win.Resize(fyne.NewSize(560, 620))
 	g.win.ShowAndRun()
+}
+
+// setupTray adds a menu-bar (system tray) icon with quick actions, mirroring
+// pandora-mini. Closing the window hides it to the tray instead of quitting.
+func (g *gui) setupTray(a fyne.App) {
+	desk, ok := a.(desktop.App)
+	if !ok {
+		return
+	}
+	desk.SetSystemTrayIcon(fyne.NewStaticResource("tray.png", trayPNG))
+
+	quitItem := fyne.NewMenuItem("Salir", func() { a.Quit() })
+	quitItem.IsQuit = true
+	desk.SetSystemTrayMenu(fyne.NewMenu("Pandora FMS Netflow Probe",
+		fyne.NewMenuItem("Mostrar / ocultar", func() {
+			if g.winVisible {
+				g.win.Hide()
+				g.winVisible = false
+			} else {
+				g.win.Show()
+				g.winVisible = true
+			}
+		}),
+		fyne.NewMenuItem("Iniciar captura", func() {
+			if !g.running {
+				g.start()
+			}
+		}),
+		fyne.NewMenuItem("Detener captura", func() {
+			if g.running {
+				g.stop()
+			}
+		}),
+		quitItem,
+	))
+	g.win.SetCloseIntercept(func() {
+		g.win.Hide()
+		g.winVisible = false
+	})
 }
 
 func (g *gui) buildUI() {
@@ -314,51 +361,68 @@ func humanBytes(n uint64) string {
 
 // --- permissions (macOS) -----------------------------------------------------
 
-// showPermissionDialog explains the macOS capture permission and offers to open
-// System Settings and to grant /dev/bpf access with an administrator prompt.
+// showPermissionDialog explains the macOS capture permission and offers to
+// grant /dev/bpf access with an administrator prompt. There is deliberately no
+// "open System Settings" action: macOS has no Privacy toggle for packet
+// capture, so sending the user there is a dead end.
 func (g *gui) showPermissionDialog(cause error) {
 	var msg string
 	if cause != nil {
 		msg = fmt.Sprintf("No se pudo iniciar la captura:\n\n%v\n\n", cause)
 	}
-	msg += "macOS requiere privilegios para capturar paquetes (acceso a /dev/bpf). " +
-		"Puedes abrir los Ajustes del Sistema para revisar los permisos, o conceder el " +
-		"acceso a /dev/bpf con tu contraseña de administrador."
+	msg += "Capturar tráfico en macOS necesita acceso a los dispositivos /dev/bpf. " +
+		"macOS no tiene una casilla para esto en Ajustes del Sistema: se concede con " +
+		"tu contraseña de administrador (una sola vez; se instala un pequeño servicio " +
+		"para que se mantenga al reiniciar)."
 
 	label := widget.NewLabel(msg)
 	label.Wrapping = fyne.TextWrapWord
 
-	settingsBtn := widget.NewButton("Abrir Ajustes del Sistema", func() { g.openPrivacySettings() })
-	adminBtn := widget.NewButton("Conceder acceso a /dev/bpf (admin)", func() { g.grantBPFAccess() })
+	adminBtn := widget.NewButton("Conceder acceso a la captura", func() { g.installCapturePermission() })
+	adminBtn.Importance = widget.HighImportance
 
-	content := container.NewVBox(label, layout.NewSpacer(), settingsBtn, adminBtn)
+	content := container.NewVBox(label, layout.NewSpacer(), adminBtn)
 	d := dialog.NewCustom("Permisos de captura", "Cerrar", content, g.win)
-	d.Resize(fyne.NewSize(480, 320))
+	d.Resize(fyne.NewSize(500, 300))
 	d.Show()
 }
 
-// openPrivacySettings opens System Settings → Privacy & Security. The URL scheme
-// changed in recent macOS versions, so several are tried in order.
-func (g *gui) openPrivacySettings() {
-	urls := []string{
-		"x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
-		"x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles",
-		"x-apple.systempreferences:com.apple.preference.security",
-	}
-	for _, u := range urls {
-		if err := exec.Command("open", u).Run(); err == nil {
-			g.logf("Ajustes del Sistema abiertos (Privacidad y seguridad).")
-			return
-		}
-	}
-	g.logf("No se pudieron abrir los Ajustes automáticamente: ábrelos en Privacidad y seguridad.")
-}
+const (
+	bpfDaemonLabel = "es.artica.netflowprobe.chmodbpf"
+	bpfDaemonPath  = "/Library/LaunchDaemons/es.artica.netflowprobe.chmodbpf.plist"
+)
 
-// grantBPFAccess chmods the /dev/bpf* devices so a non-root process can open
-// them. Proof of concept: this is broad, a production build should ship a
-// ChmodBPF-style LaunchDaemon with a dedicated group (as Wireshark does).
-func (g *gui) grantBPFAccess() {
-	script := `do shell script "/bin/chmod o+rw /dev/bpf* 2>/dev/null || true" with administrator privileges`
+// installCapturePermission grants access to the /dev/bpf* capture devices by
+// installing a small LaunchDaemon (root) that keeps them accessible to the
+// current user, also after a reboot. It is the macOS-correct way; there is no
+// Privacy & Security toggle for packet capture.
+func (g *gui) installCapturePermission() {
+	plist := `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>` + bpfDaemonLabel + `</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>/bin/chmod o+rw /dev/bpf* 2>/dev/null || true</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>WatchPaths</key><array><string>/dev/bpf0</string></array>
+</dict>
+</plist>
+`
+	b64 := base64.StdEncoding.EncodeToString([]byte(plist))
+	// No double quotes in this command: it is embedded in an AppleScript string.
+	cmd := fmt.Sprintf(
+		"/bin/echo %s | /usr/bin/base64 -D > %s && /usr/sbin/chown root:wheel %s && /bin/chmod 644 %s && "+
+			"(/bin/launchctl bootout system %s 2>/dev/null; /bin/launchctl bootstrap system %s 2>/dev/null || /bin/launchctl load -w %s 2>/dev/null || true); "+
+			"/bin/chmod o+rw /dev/bpf* 2>/dev/null || true",
+		b64, bpfDaemonPath, bpfDaemonPath, bpfDaemonPath, bpfDaemonPath, bpfDaemonPath, bpfDaemonPath,
+	)
+	script := `do shell script "` + cmd + `" with administrator privileges`
+
 	out, err := exec.Command("osascript", "-e", script).CombinedOutput()
 	if err != nil {
 		g.logf("No se pudo conceder el acceso: %v", err)
@@ -368,7 +432,7 @@ func (g *gui) grantBPFAccess() {
 	if s := strings.TrimSpace(string(out)); s != "" {
 		g.logf("%s", s)
 	}
-	g.logf("Acceso a /dev/bpf concedido. Reintentando la captura…")
+	g.logf("Acceso a la captura concedido (servicio %s). Reintentando…", bpfDaemonLabel)
 	// Retry automatically so the user does not have to press Iniciar again.
 	fyne.Do(func() { g.start() })
 }

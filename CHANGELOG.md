@@ -25,6 +25,12 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 - GUI real-time feedback: live counters (packets, bytes, active flows,
   exported flows) refreshed every second, plus the green `kittBar` spinner
   (ported from pandora-mini) shown while capturing.
+- GUI menu-bar (tray) icon: grey Pandora glyph with Show/Hide, Start, Stop and
+  Quit; closing the window hides it to the tray.
+- Capture permission on macOS: installs a persistent ChmodBPF `LaunchDaemon`
+  (`/Library/LaunchDaemons/es.artica.netflowprobe.chmodbpf.plist`) and retries
+  automatically. Removed the misleading link to System Settings — macOS has no
+  Privacy toggle for packet capture.
 
 ### Known gaps (roadmap)
 - Tray UI for non-technical users (Wails or Fyne).
