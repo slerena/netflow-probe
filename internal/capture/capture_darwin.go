@@ -29,7 +29,19 @@ func OpenLive(iface string, _ string) (Source, error) {
 	if iface == "" {
 		return nil, fmt.Errorf("capture: interface name is required on macOS")
 	}
-	s, err := bsdbpf.NewBPFSniffer(iface, nil)
+	// Pass our own Options with an empty BPFDeviceName. Passing nil makes
+	// gopacket/bsdbpf reuse and mutate a package-level default, which leaves
+	// fd=0 on any subsequent call in the same process, so the next capture
+	// fails with "operation not supported by device". A fresh Options forces
+	// the BPF device to be picked on every call.
+	opts := &bsdbpf.Options{
+		BPFDeviceName:    "",
+		ReadBufLen:       32768,
+		Promisc:          true,
+		Immediate:        true,
+		PreserveLinkAddr: true,
+	}
+	s, err := bsdbpf.NewBPFSniffer(iface, opts)
 	if err != nil {
 		return nil, fmt.Errorf("bpf %s: %w (¿ejecutando como root?)", iface, err)
 	}

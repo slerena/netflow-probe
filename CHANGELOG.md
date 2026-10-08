@@ -32,6 +32,12 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
   automatically. Removed the misleading link to System Settings — macOS has no
   Privacy toggle for packet capture.
 
+### Fixed
+- macOS capture failing with `operation not supported by device` on the second
+  start: `gopacket/bsdbpf` mutates a package-level default when options are
+  `nil`, leaving `fd=0` on the next call. A fresh `bsdbpf.Options` is now passed
+  so the BPF device is picked on every call.
+
 ### Known gaps (roadmap)
 - Tray UI for non-technical users (Wails or Fyne).
 - Windows service + installer (elevation, auto-start, bundled WinDivert driver).
