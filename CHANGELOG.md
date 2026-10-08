@@ -22,6 +22,9 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
 - **macOS GUI (PoC)**: Fyne desktop app (`make macapp`) with a Pandora icon,
   Start/Stop, status/log, and a macOS capture-permission flow (opens System
   Settings and can grant `/dev/bpf` access with an admin prompt).
+- GUI real-time feedback: live counters (packets, bytes, active flows,
+  exported flows) refreshed every second, plus the green `kittBar` spinner
+  (ported from pandora-mini) shown while capturing.
 
 ### Known gaps (roadmap)
 - Tray UI for non-technical users (Wails or Fyne).

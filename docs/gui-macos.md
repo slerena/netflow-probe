@@ -28,7 +28,9 @@ open "dist/Pandora FMS Netflow Probe.app"
    `Wi-Fi (en0) · 172.20.10.9` o `VPN (utun13) · 100.99.221.4`. Se ocultan las
    internas de macOS (`anpi`, `awdl`, `llw`, `bridge`, `utun` sin IP…).
 2. **Colector NetFlow**: IP/host del servidor Pandora. **Puerto**: `9995`.
-3. Pulsa **Iniciar**. El estado pasa a "Activo · N flujos exportados".
+3. Pulsa **Iniciar**. Mientras captura verás la **barra verde** (spinner) y el
+   estado en tiempo real: `Capturando · N paquetes · X MB · M flujos activos ·
+   K exportados`, refrescado cada segundo.
 4. **Detener** vuelca los flujos pendientes y para limpiamente.
 5. **Guardar configuración** escribe `~/.netflow-probe.yaml`.
 

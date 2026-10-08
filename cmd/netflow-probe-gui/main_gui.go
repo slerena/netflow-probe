@@ -58,11 +58,14 @@ type gui struct {
 	status        *widget.Label
 	logView       *widget.Entry
 	startBtn      *widget.Button
+	spinner       *kittBar
 
 	sess    *session
 	running bool
 
 	exported atomic.Uint64
+	packets  atomic.Uint64
+	bytes    atomic.Uint64
 	logMu    sync.Mutex
 	logLines []string
 }
@@ -100,6 +103,9 @@ func (g *gui) buildUI() {
 	g.startBtn = widget.NewButton("Iniciar", g.start)
 	g.startBtn.Importance = widget.HighImportance
 
+	g.spinner = newKittBar()
+	g.spinner.Hide()
+
 	permBtn := widget.NewButton("Permisos de captura…", func() { g.showPermissionDialog(nil) })
 	saveBtn := widget.NewButton("Guardar configuración", func() {
 		if err := g.saveConfig(); err != nil {
@@ -117,7 +123,7 @@ func (g *gui) buildUI() {
 		widget.NewLabelWithStyle("Puerto UDP", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		g.port,
 		container.NewHBox(g.startBtn, permBtn, saveBtn),
-		container.NewHBox(widget.NewLabelWithStyle("Estado:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), g.status),
+		container.NewHBox(widget.NewLabelWithStyle("Estado:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), g.status, g.spinner),
 	)
 
 	header := container.NewHBox(
@@ -186,6 +192,10 @@ func (g *gui) start() {
 	g.sess = &session{cancel: cancel, src: src, table: table, exp: exp}
 	g.running = true
 	g.exported.Store(0)
+	g.packets.Store(0)
+	g.bytes.Store(0)
+	g.spinner.Show()
+	g.spinner.Start()
 	g.setRunningUI(true)
 	g.logf("Iniciado: capturando en %s → %s", cfg.Interface, cfg.CollectorAddr())
 
@@ -201,6 +211,8 @@ func (g *gui) start() {
 			}
 			key, l3, flags, ok := flow.Observe(data, link)
 			if ok {
+				g.packets.Add(1)
+				g.bytes.Add(l3)
 				table.Observe(key, l3, flags, time.Now())
 			}
 		}
@@ -210,6 +222,8 @@ func (g *gui) start() {
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
+		uiTick := time.NewTicker(time.Second)
+		defer uiTick.Stop()
 		for {
 			select {
 			case <-ctx.Done():
@@ -222,10 +236,14 @@ func (g *gui) start() {
 				fyne.Do(func() {
 					g.running = false
 					g.sess = nil
+					g.spinner.Stop()
+					g.spinner.Hide()
 					g.setRunningUI(false)
 					g.updateStatus()
 				})
 				return
+			case <-uiTick.C:
+				g.updateStatus()
 			case <-ticker.C:
 				recs := table.Expire()
 				if len(recs) == 0 {
@@ -260,10 +278,30 @@ func (g *gui) setRunningUI(running bool) {
 
 func (g *gui) updateStatus() {
 	if g.running {
-		fyne.Do(func() { g.status.SetText(fmt.Sprintf("Activo · %d flujos exportados", g.exported.Load())) })
+		active := 0
+		if g.sess != nil {
+			active = g.sess.table.Len()
+		}
+		txt := fmt.Sprintf("Capturando · %d paquetes · %s · %d flujos activos · %d exportados",
+			g.packets.Load(), humanBytes(g.bytes.Load()), active, g.exported.Load())
+		fyne.Do(func() { g.status.SetText(txt) })
 		return
 	}
 	fyne.Do(func() { g.status.SetText(fmt.Sprintf("Detenido · %d flujos exportados", g.exported.Load())) })
+}
+
+// humanBytes formats a byte count with a binary unit.
+func humanBytes(n uint64) string {
+	const unit = 1024
+	if n < unit {
+		return fmt.Sprintf("%d B", n)
+	}
+	div, exp := uint64(unit), 0
+	for m := n / unit; m >= unit; m /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
 // --- permissions (macOS) -----------------------------------------------------
