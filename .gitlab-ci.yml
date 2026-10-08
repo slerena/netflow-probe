@@ -1,0 +1,20 @@
+stages:
+  - test
+  - build
+
+test:
+  stage: test
+  image: golang:1.27
+  script:
+    - go vet ./...
+    - go test ./...
+
+build:
+  stage: build
+  image: golang:1.27
+  script:
+    - make dist
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week

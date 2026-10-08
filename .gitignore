@@ -1,0 +1,14 @@
+# Build artifacts
+/netflow-probe
+/netflow-probe.exe
+/dist/
+*.test
+*.out
+
+# Local captures / dumps
+*.pcap
+*.pcapng
+
+# OS noise
+.DS_Store
+Thumbs.db

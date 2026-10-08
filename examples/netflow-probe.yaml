@@ -1,0 +1,28 @@
+# Example configuration for netflow-probe.
+# The primary target is the Pandora FMS NetFlow collector (nfcapd, UDP/9995).
+
+# Host running the collector. In Pandora FMS this is usually the Pandora server
+# itself; the agent only needs outbound UDP to it.
+collector: 192.168.1.10
+port: 9995
+
+# Capture interface. On Windows this is ignored: WinDivert captures the whole
+# host. On Linux/macOS set it explicitly, e.g. "eth0" or "en0".
+interface: ""
+
+# Flow aggregation timeouts. A flow is exported after `inactive_timeout`
+# without packets, or after `active_timeout` even if still busy.
+active_timeout: 30m
+inactive_timeout: 15s
+
+# Upper bound on tracked flows (memory guard).
+max_flows: 65536
+
+# NetFlow v9 observation domain and how often templates are re-sent.
+source_id: 1
+template_refresh: 20
+
+# Windows-only WinDivert filter expression. Ignored on Linux/macOS.
+filter: "ip or ipv6"
+
+log_level: info
