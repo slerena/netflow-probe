@@ -66,6 +66,17 @@ trabajo de endurecimiento.
 - Sin filtro BPF en la GUI todavía (captura todo y agrega en user-space).
 - El icono es el del agente Pandora RC (`integria_enterprise`), reutilizado aquí.
 
+## Diagnóstico
+
+Prueba la captura sin abrir la interfaz (mismo binario del bundle):
+
+```sh
+"dist/Pandora FMS Netflow Probe.app/Contents/MacOS/NetFlowProbe" -selftest en0
+```
+
+Debe imprimir `OK: captura operativa en en0 — N paquetes …`. Si falla, muestra
+el error y el remedio (`sudo chmod o+rw /dev/bpf*`).
+
 ## Recursos
 
 | Recurso | Ruta |

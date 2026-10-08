@@ -10,6 +10,7 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"flag"
 	"fmt"
 	"net"
 	"os"
@@ -71,6 +72,13 @@ type gui struct {
 }
 
 func main() {
+	selftest := flag.String("selftest", "", "captura unos segundos en la interfaz dada, informa y sale (diagnóstico)")
+	flag.Parse()
+	if *selftest != "" {
+		runSelfTest(*selftest)
+		return
+	}
+
 	a := app.New()
 	a.SetIcon(fyne.NewStaticResource("icon.png", iconPNG))
 
@@ -360,7 +368,36 @@ func (g *gui) grantBPFAccess() {
 	if s := strings.TrimSpace(string(out)); s != "" {
 		g.logf("%s", s)
 	}
-	g.logf("Acceso a /dev/bpf concedido. Pulsa Iniciar de nuevo.")
+	g.logf("Acceso a /dev/bpf concedido. Reintentando la captura…")
+	// Retry automatically so the user does not have to press Iniciar again.
+	fyne.Do(func() { g.start() })
+}
+
+// runSelfTest performs a short capture and reports whether it works. It is used
+// by `-selftest <iface>` for support/diagnostics, without opening the UI.
+func runSelfTest(iface string) {
+	src, err := capture.OpenLive(iface, "")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "FALLO: no se pudo abrir la captura en %s:\n%v\n", iface, err)
+		fmt.Fprintf(os.Stderr, "\nSi es un problema de permisos, ejecuta:\n  sudo chmod o+rw /dev/bpf*\n")
+		os.Exit(1)
+	}
+	defer func() { _ = src.Close() }()
+
+	link := src.LinkType()
+	deadline := time.Now().Add(3 * time.Second)
+	var pkts, byts uint64
+	for time.Now().Before(deadline) {
+		data, _, err := src.Next()
+		if err != nil {
+			break
+		}
+		if _, l3, _, ok := flow.Observe(data, link); ok {
+			pkts++
+			byts += l3
+		}
+	}
+	fmt.Printf("OK: captura operativa en %s — %d paquetes, %s en 3 s\n", iface, pkts, humanBytes(byts))
 }
 
 // --- helpers -----------------------------------------------------------------
