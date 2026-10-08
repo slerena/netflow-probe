@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -49,12 +50,14 @@ type session struct {
 type gui struct {
 	win fyne.Window
 
-	ifaceSel  *widget.Select
-	collector *widget.Entry
-	port      *widget.Entry
-	status    *widget.Label
-	logView   *widget.Entry
-	startBtn  *widget.Button
+	ifaceSel      *widget.Select
+	ifaceToDevice map[string]string
+	deviceToLabel map[string]string
+	collector     *widget.Entry
+	port          *widget.Entry
+	status        *widget.Label
+	logView       *widget.Entry
+	startBtn      *widget.Button
 
 	sess    *session
 	running bool
@@ -69,7 +72,7 @@ func main() {
 	a.SetIcon(fyne.NewStaticResource("icon.png", iconPNG))
 
 	g := &gui{}
-	g.win = a.NewWindow("NetFlow Probe (Pandora)")
+	g.win = a.NewWindow("Pandora FMS Netflow Probe")
 	g.buildUI()
 	g.loadConfig()
 	g.win.Resize(fyne.NewSize(560, 620))
@@ -77,7 +80,9 @@ func main() {
 }
 
 func (g *gui) buildUI() {
-	g.ifaceSel = widget.NewSelect(interfaceNames(), nil)
+	labels, byLabel, byDevice := interfaceOptions()
+	g.ifaceToDevice, g.deviceToLabel = byLabel, byDevice
+	g.ifaceSel = widget.NewSelect(labels, nil)
 	g.ifaceSel.PlaceHolder = "Interfaz de red"
 
 	g.collector = widget.NewEntry()
@@ -117,7 +122,7 @@ func (g *gui) buildUI() {
 
 	header := container.NewHBox(
 		widget.NewIcon(fyne.NewStaticResource("icon.png", iconPNG)),
-		widget.NewLabelWithStyle("NetFlow Probe", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+		widget.NewLabelWithStyle("Pandora FMS Netflow Probe", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 	)
 
 	body := container.NewBorder(
@@ -152,8 +157,13 @@ func (g *gui) start() {
 		return
 	}
 
+	device := g.ifaceToDevice[g.ifaceSel.Selected]
+	if device == "" {
+		device = g.ifaceSel.Selected
+	}
+
 	cfg := config.Default()
-	cfg.Interface = g.ifaceSel.Selected
+	cfg.Interface = device
 	cfg.Collector = collector
 	cfg.Port = port
 
@@ -354,15 +364,17 @@ func (g *gui) loadConfig() {
 		g.port.SetText(strconv.Itoa(cfg.Port))
 	}
 	if cfg.Interface != "" {
-		g.ifaceSel.SetSelected(cfg.Interface)
+		if label, ok := g.deviceToLabel[cfg.Interface]; ok {
+			g.ifaceSel.SetSelected(label)
+		}
 	}
 	if g.ifaceSel.Selected == "" {
-		for _, n := range g.ifaceSel.Options {
-			if n == "en0" {
-				g.ifaceSel.SetSelected("en0")
-				break
-			}
+		if label, ok := g.deviceToLabel["en0"]; ok {
+			g.ifaceSel.SetSelected(label)
 		}
+	}
+	if g.ifaceSel.Selected == "" && len(g.ifaceSel.Options) > 0 {
+		g.ifaceSel.SetSelected(g.ifaceSel.Options[0])
 	}
 	g.updateStatus()
 }
@@ -372,26 +384,152 @@ func (g *gui) saveConfig() error {
 	if err != nil {
 		return fmt.Errorf("puerto inválido")
 	}
+	device := g.ifaceToDevice[g.ifaceSel.Selected]
+	if device == "" {
+		device = g.ifaceSel.Selected
+	}
 	cfg := config.Default()
-	cfg.Interface = g.ifaceSel.Selected
+	cfg.Interface = device
 	cfg.Collector = strings.TrimSpace(g.collector.Text)
 	cfg.Port = port
 	return cfg.Save(g.configPath())
 }
 
-// interfaceNames lists the usable network interfaces (filtering loopback and
-// down interfaces).
-func interfaceNames() []string {
+// interfaceOptions returns the display labels of the interfaces that are
+// actually usable, plus the label<->device maps. Only interfaces with a
+// non-link-local address are shown, so macOS internals (anpi, awdl, llw,
+// bridge, idle utun...) do not clutter the list. Each label carries a friendly
+// description (Wi-Fi, Thunderbolt 1, VPN, ...) and the address.
+func interfaceOptions() (labels []string, byLabel, byDevice map[string]string) {
+	byLabel = map[string]string{}
+	byDevice = map[string]string{}
+
+	ports := hardwarePorts()
 	ifaces, err := net.Interfaces()
+	if err != nil {
+		return nil, byLabel, byDevice
+	}
+
+	type item struct {
+		label    string
+		device   string
+		physical bool
+	}
+	var items []item
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		ip, ok := usableAddr(iface)
+		if !ok {
+			continue
+		}
+		desc := ports[iface.Name]
+		if desc == "" {
+			desc = kindOfInterface(iface.Name)
+		}
+		items = append(items, item{
+			label:    interfaceLabel(desc, iface.Name, ip),
+			device:   iface.Name,
+			physical: ports[iface.Name] != "",
+		})
+	}
+
+	// Physical ports first (Wi-Fi, Ethernet...), then VPN/bridges; by name.
+	sort.SliceStable(items, func(i, j int) bool {
+		if items[i].physical != items[j].physical {
+			return items[i].physical
+		}
+		return items[i].device < items[j].device
+	})
+
+	for _, it := range items {
+		labels = append(labels, it.label)
+		byLabel[it.label] = it.device
+		byDevice[it.device] = it.label
+	}
+	return labels, byLabel, byDevice
+}
+
+func interfaceLabel(desc, name string, ip net.IP) string {
+	switch {
+	case desc != "" && strings.Contains(desc, name):
+		return fmt.Sprintf("%s · %s", desc, ip)
+	case desc != "":
+		return fmt.Sprintf("%s (%s) · %s", desc, name, ip)
+	default:
+		return fmt.Sprintf("%s · %s", name, ip)
+	}
+}
+
+// kindOfInterface gives a generic description when macOS reports no hardware
+// port for the device.
+func kindOfInterface(name string) string {
+	switch {
+	case strings.HasPrefix(name, "utun"), strings.HasPrefix(name, "ipsec"),
+		strings.HasPrefix(name, "tun"), strings.HasPrefix(name, "tap"),
+		strings.HasPrefix(name, "ppp"):
+		return "VPN"
+	case strings.HasPrefix(name, "bridge"):
+		return "Bridge"
+	case strings.HasPrefix(name, "en"):
+		return "Ethernet"
+	default:
+		return ""
+	}
+}
+
+// usableAddr returns an interface address that indicates real connectivity,
+// preferring IPv4. Loopback and link-local (169.254/16, fe80::/10) are ignored,
+// as are IPv6 ULA addresses when there is no IPv4.
+func usableAddr(iface net.Interface) (net.IP, bool) {
+	addrs, err := iface.Addrs()
+	if err != nil {
+		return nil, false
+	}
+	var v6 net.IP
+	for _, a := range addrs {
+		n, ok := a.(*net.IPNet)
+		if !ok {
+			continue
+		}
+		ip := n.IP
+		if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+			continue
+		}
+		if ip.To4() != nil {
+			return ip, true
+		}
+		if ip.IsGlobalUnicast() && !ip.IsPrivate() && v6 == nil {
+			v6 = ip
+		}
+	}
+	if v6 != nil {
+		return v6, true
+	}
+	return nil, false
+}
+
+// hardwarePorts maps a BSD device name (en0, en1, ...) to the friendly hardware
+// port name reported by macOS ("Wi-Fi", "Thunderbolt 1", ...). Best effort.
+func hardwarePorts() map[string]string {
+	out, err := exec.Command("networksetup", "-listallhardwareports").Output()
 	if err != nil {
 		return nil
 	}
-	var names []string
-	for _, iface := range ifaces {
-		if iface.Flags&net.FlagLoopback != 0 || iface.Flags&net.FlagUp == 0 {
-			continue
+	ports := map[string]string{}
+	var current string
+	for _, line := range strings.Split(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		switch {
+		case strings.HasPrefix(line, "Hardware Port:"):
+			current = strings.TrimSpace(strings.TrimPrefix(line, "Hardware Port:"))
+		case strings.HasPrefix(line, "Device:"):
+			dev := strings.TrimSpace(strings.TrimPrefix(line, "Device:"))
+			if dev != "" && current != "" {
+				ports[dev] = current
+			}
 		}
-		names = append(names, iface.Name)
 	}
-	return names
+	return ports
 }

@@ -9,12 +9,12 @@ toolchain de Apple (Fyne usa Cocoa/OpenGL).
 
 ```sh
 make macapp
-open dist/NetFlowProbe.app
+open "dist/Pandora FMS Netflow Probe.app"
 ```
 
 `make macapp` ejecuta `scripts/build-macos-app.sh`, que:
 1. compila `cmd/netflow-probe-gui` con cgo,
-2. monta `dist/NetFlowProbe.app` con `Info.plist`,
+2. monta `dist/Pandora FMS Netflow Probe.app` con `Info.plist`,
 3. copia el icono `packaging/macos/AppIcon.icns` (icono del agente Pandora),
 4. firma **ad-hoc** para pruebas locales.
 
@@ -23,7 +23,10 @@ open dist/NetFlowProbe.app
 
 ## Uso
 
-1. **Interfaz**: elige la interfaz de red (por defecto `en0`).
+1. **Interfaz**: la lista muestra solo interfaces **conectadas** (con una IP
+   utilizable, no link-local), con descripción y dirección, p. ej.
+   `Wi-Fi (en0) · 172.20.10.9` o `VPN (utun13) · 100.99.221.4`. Se ocultan las
+   internas de macOS (`anpi`, `awdl`, `llw`, `bridge`, `utun` sin IP…).
 2. **Colector NetFlow**: IP/host del servidor Pandora. **Puerto**: `9995`.
 3. Pulsa **Iniciar**. El estado pasa a "Activo · N flujos exportados".
 4. **Detener** vuelca los flujos pendientes y para limpiamente.

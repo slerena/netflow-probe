@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
-# Builds NetFlowProbe.app (macOS bundle) with the Pandora icon.
+# Builds "Pandora FMS Netflow Probe.app" (macOS bundle) with the Pandora icon.
 # Requires cgo + the Apple toolchain (Fyne uses Cocoa/OpenGL).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-APP_NAME="NetFlowProbe"
+APP_DISPLAY="Pandora FMS Netflow Probe"
+EXE="NetFlowProbe"
 DIST="$ROOT/dist"
-APP="$DIST/$APP_NAME.app"
+APP="$DIST/$APP_DISPLAY.app"
 
 echo "==> Compilando GUI (macOS, cgo)…"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-CGO_ENABLED=1 go build -trimpath -ldflags "-s -w" -o "$APP/Contents/MacOS/$APP_NAME" ./cmd/netflow-probe-gui
+CGO_ENABLED=1 go build -trimpath -ldflags "-s -w" -o "$APP/Contents/MacOS/$EXE" ./cmd/netflow-probe-gui
 
 echo "==> Copiando icono…"
 cp "$ROOT/packaging/macos/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
@@ -24,8 +25,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleName</key><string>NetFlow Probe</string>
-	<key>CFBundleDisplayName</key><string>NetFlow Probe</string>
+	<key>CFBundleName</key><string>Pandora FMS Netflow Probe</string>
+	<key>CFBundleDisplayName</key><string>Pandora FMS Netflow Probe</string>
 	<key>CFBundleIdentifier</key><string>es.artica.netflowprobe</string>
 	<key>CFBundleVersion</key><string>0.1.0</string>
 	<key>CFBundleShortVersionString</key><string>0.1.0</string>

@@ -81,7 +81,7 @@ colector, Iniciar/Detener y registro. Incluye el flujo de **permisos de macOS**
 
 ```sh
 make macapp
-open dist/NetFlowProbe.app
+open "dist/Pandora FMS Netflow Probe.app"
 ```
 
 Ver [docs/gui-macos.md](docs/gui-macos.md). Requiere cgo y Xcode CLT; el resto
