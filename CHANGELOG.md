@@ -33,6 +33,10 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
   Privacy toggle for packet capture.
 
 ### Fixed
+- The GUI **Detener** button did nothing: the start/stop button shared the start
+  handler, which returns immediately while running. It is now a real
+  start/stop toggle. On macOS the capture goroutine is also unblocked on close
+  (read timeout + a `closed` flag), so stopping actually terminates it.
 - macOS capture is now implemented directly on `/dev/bpf*` instead of
   `gopacket/bsdbpf`, which had three defects: it mutated a package-level default
   (a second open used `fd=0` → `operation not supported by device`), it did not

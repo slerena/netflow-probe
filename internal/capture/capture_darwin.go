@@ -3,7 +3,9 @@
 package capture
 
 import (
+	"errors"
 	"fmt"
+	"sync/atomic"
 	"syscall"
 	"time"
 	"unsafe"
@@ -12,6 +14,9 @@ import (
 	"github.com/gopacket/gopacket/layers"
 	"golang.org/x/sys/unix"
 )
+
+// errClosed is returned by Next after Close.
+var errClosed = errors.New("captura detenida")
 
 // We implement the macOS capture directly on /dev/bpf* instead of using
 // gopacket/bsdbpf, which has proven fragile: it mutates a package-level default
@@ -32,16 +37,18 @@ const bpfHdrMinLen = 18
 const bpfAlign = 4
 
 type bpfSource struct {
-	fd   int
-	buf  []byte
-	off  int // start of the current record within buf
-	end  int // number of valid bytes in buf
-	link layers.LinkType
+	fd     int
+	buf    []byte
+	off    int // start of the current record within buf
+	end    int // number of valid bytes in buf
+	link   layers.LinkType
+	closed atomic.Bool
 }
 
 func (s *bpfSource) LinkType() layers.LinkType { return s.link }
 
 func (s *bpfSource) Close() error {
+	s.closed.Store(true)
 	if s.fd >= 0 {
 		err := syscall.Close(s.fd)
 		s.fd = -1
@@ -53,6 +60,9 @@ func (s *bpfSource) Close() error {
 // Next returns the next captured frame. It blocks until a packet is available.
 func (s *bpfSource) Next() ([]byte, gopacket.CaptureInfo, error) {
 	for {
+		if s.closed.Load() {
+			return nil, gopacket.CaptureInfo{}, errClosed
+		}
 		if s.off+bpfHdrMinLen <= s.end {
 			hdr := (*unix.BpfHdr)(unsafe.Pointer(&s.buf[s.off]))
 			caplen := int(hdr.Caplen)
@@ -79,6 +89,9 @@ func (s *bpfSource) Next() ([]byte, gopacket.CaptureInfo, error) {
 
 		n, err := readRetry(s.fd, s.buf)
 		if err != nil {
+			if s.closed.Load() {
+				return nil, gopacket.CaptureInfo{}, errClosed
+			}
 			return nil, gopacket.CaptureInfo{}, err
 		}
 		s.off, s.end = 0, n
@@ -123,6 +136,14 @@ func OpenLive(iface string, _ string) (Source, error) {
 	if err := syscall.SetBpfImmediate(fd, 1); err != nil {
 		_ = syscall.Close(fd)
 		return nil, fmt.Errorf("bpf %s: immediate: %w", iface, err)
+	}
+	// A read timeout makes blocking reads return periodically (0 bytes when
+	// idle) so Close can reliably interrupt the reader; closing the fd alone
+	// does not always wake a blocked read on /dev/bpf.
+	tv := syscall.Timeval{Sec: 0, Usec: 200000}
+	if err := syscall.SetBpfTimeout(fd, &tv); err != nil {
+		_ = syscall.Close(fd)
+		return nil, fmt.Errorf("bpf %s: timeout: %w", iface, err)
 	}
 	if err := syscall.SetBpfHeadercmpl(fd, 1); err != nil {
 		_ = syscall.Close(fd)

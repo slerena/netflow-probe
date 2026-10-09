@@ -155,7 +155,7 @@ func (g *gui) buildUI() {
 	g.logView.Disable()
 	g.logView.Wrapping = fyne.TextWrapWord
 
-	g.startBtn = widget.NewButton("Iniciar", g.start)
+	g.startBtn = widget.NewButton("Iniciar", g.toggle)
 	g.startBtn.Importance = widget.HighImportance
 
 	g.spinner = newKittBar()
@@ -260,8 +260,13 @@ func (g *gui) start() {
 		for {
 			data, _, err := src.Next()
 			if err != nil {
-				g.logf("Captura detenida: %v", err)
-				cancel()
+				select {
+				case <-ctx.Done():
+					// Normal stop: the source was closed on purpose.
+				default:
+					g.logf("Captura detenida: %v", err)
+					cancel()
+				}
 				return
 			}
 			key, l3, flags, ok := flow.Observe(data, link)
@@ -321,6 +326,15 @@ func (g *gui) stop() {
 	}
 	g.logf("Deteniendo…")
 	g.sess.cancel()
+}
+
+// toggle is the click handler for the start/stop button.
+func (g *gui) toggle() {
+	if g.running {
+		g.stop()
+		return
+	}
+	g.start()
 }
 
 func (g *gui) setRunningUI(running bool) {
