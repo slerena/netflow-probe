@@ -1,15 +1,14 @@
-//go:build darwin && cgo
+//go:build (darwin || windows) && cgo
 
-// Command netflow-probe-gui is a small macOS desktop front-end (proof of
-// concept) for the netflow-probe capture engine. It targets non-technical
-// users: pick an interface and the Pandora collector, press Start/Stop, and —
-// when macOS blocks capture — it guides the user to grant permission.
+// Command netflow-probe-gui is a desktop front-end (proof of concept) for the
+// netflow-probe capture engine on macOS and Windows. It targets non-technical
+// users: point it at the Pandora collector and press Start/Stop; when the OS
+// blocks capture it guides the user to grant the required permission.
 package main
 
 import (
 	"context"
 	_ "embed"
-	"encoding/base64"
 	"errors"
 	"flag"
 	"fmt"
@@ -54,6 +53,7 @@ type session struct {
 }
 
 type gui struct {
+	app fyne.App
 	win fyne.Window
 
 	ifaceSel      *widget.Select
@@ -88,7 +88,7 @@ func main() {
 	a := app.New()
 	a.SetIcon(fyne.NewStaticResource("icon.png", iconPNG))
 
-	g := &gui{}
+	g := &gui{app: a}
 	g.win = a.NewWindow("Pandora FMS Netflow Probe")
 	g.buildUI()
 	g.loadConfig()
@@ -170,9 +170,18 @@ func (g *gui) buildUI() {
 		}
 	})
 
-	form := container.NewVBox(
-		widget.NewLabelWithStyle("Interfaz", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
-		g.ifaceSel,
+	formItems := []fyne.CanvasObject{}
+	if platformSelectsInterface {
+		formItems = append(formItems,
+			widget.NewLabelWithStyle("Interfaz", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
+			g.ifaceSel,
+		)
+	} else {
+		formItems = append(formItems,
+			widget.NewLabel("En Windows se captura todo el equipo (no hay que elegir interfaz)."),
+		)
+	}
+	formItems = append(formItems,
 		widget.NewLabelWithStyle("Colector NetFlow (Pandora)", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
 		g.collector,
 		widget.NewLabelWithStyle("Puerto UDP", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}),
@@ -180,6 +189,7 @@ func (g *gui) buildUI() {
 		container.NewHBox(g.startBtn, permBtn, saveBtn),
 		container.NewHBox(widget.NewLabelWithStyle("Estado:", fyne.TextAlignLeading, fyne.TextStyle{Bold: true}), g.status, g.spinner),
 	)
+	form := container.NewVBox(formItems...)
 
 	header := container.NewHBox(
 		widget.NewIcon(fyne.NewStaticResource("icon.png", iconPNG)),
@@ -213,7 +223,7 @@ func (g *gui) start() {
 		g.showError("Indica la IP o el host del servidor Pandora (colector NetFlow).")
 		return
 	}
-	if g.ifaceSel.Selected == "" {
+	if platformSelectsInterface && g.ifaceSel.Selected == "" {
 		g.showError("Selecciona una interfaz de red.")
 		return
 	}
@@ -373,82 +383,28 @@ func humanBytes(n uint64) string {
 	return fmt.Sprintf("%.1f %cB", float64(n)/float64(div), "KMGTPE"[exp])
 }
 
-// --- permissions (macOS) -----------------------------------------------------
+// --- permissions -------------------------------------------------------------
 
-// showPermissionDialog explains the macOS capture permission and offers to
-// grant /dev/bpf access with an administrator prompt. There is deliberately no
-// "open System Settings" action: macOS has no Privacy toggle for packet
-// capture, so sending the user there is a dead end.
+// showPermissionDialog explains that the operating system blocked capture and
+// offers the platform-specific action to grant it (macOS: install a /dev/bpf
+// LaunchDaemon; Windows: relaunch elevated for the WinDivert driver).
 func (g *gui) showPermissionDialog(cause error) {
 	var msg string
 	if cause != nil {
 		msg = fmt.Sprintf("No se pudo iniciar la captura:\n\n%v\n\n", cause)
 	}
-	msg += "Capturar tráfico en macOS necesita acceso a los dispositivos /dev/bpf. " +
-		"macOS no tiene una casilla para esto en Ajustes del Sistema: se concede con " +
-		"tu contraseña de administrador (una sola vez; se instala un pequeño servicio " +
-		"para que se mantenga al reiniciar)."
+	msg += platformPermissionHint()
 
 	label := widget.NewLabel(msg)
 	label.Wrapping = fyne.TextWrapWord
 
-	adminBtn := widget.NewButton("Conceder acceso a la captura", func() { g.installCapturePermission() })
-	adminBtn.Importance = widget.HighImportance
+	btn := widget.NewButton(platformPermissionButton(), func() { g.requestPlatformPermission() })
+	btn.Importance = widget.HighImportance
 
-	content := container.NewVBox(label, layout.NewSpacer(), adminBtn)
+	content := container.NewVBox(label, layout.NewSpacer(), btn)
 	d := dialog.NewCustom("Permisos de captura", "Cerrar", content, g.win)
 	d.Resize(fyne.NewSize(500, 300))
 	d.Show()
-}
-
-const (
-	bpfDaemonLabel = "es.artica.netflowprobe.chmodbpf"
-	bpfDaemonPath  = "/Library/LaunchDaemons/es.artica.netflowprobe.chmodbpf.plist"
-)
-
-// installCapturePermission grants access to the /dev/bpf* capture devices by
-// installing a small LaunchDaemon (root) that keeps them accessible to the
-// current user, also after a reboot. It is the macOS-correct way; there is no
-// Privacy & Security toggle for packet capture.
-func (g *gui) installCapturePermission() {
-	plist := `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>Label</key><string>` + bpfDaemonLabel + `</string>
-  <key>ProgramArguments</key>
-  <array>
-    <string>/bin/sh</string>
-    <string>-c</string>
-    <string>/bin/chmod o+rw /dev/bpf* 2>/dev/null || true</string>
-  </array>
-  <key>RunAtLoad</key><true/>
-  <key>WatchPaths</key><array><string>/dev/bpf0</string></array>
-</dict>
-</plist>
-`
-	b64 := base64.StdEncoding.EncodeToString([]byte(plist))
-	// No double quotes in this command: it is embedded in an AppleScript string.
-	cmd := fmt.Sprintf(
-		"/bin/echo %s | /usr/bin/base64 -D > %s && /usr/sbin/chown root:wheel %s && /bin/chmod 644 %s && "+
-			"(/bin/launchctl bootout system %s 2>/dev/null; /bin/launchctl bootstrap system %s 2>/dev/null || /bin/launchctl load -w %s 2>/dev/null || true); "+
-			"/bin/chmod o+rw /dev/bpf* 2>/dev/null || true",
-		b64, bpfDaemonPath, bpfDaemonPath, bpfDaemonPath, bpfDaemonPath, bpfDaemonPath, bpfDaemonPath,
-	)
-	script := `do shell script "` + cmd + `" with administrator privileges`
-
-	out, err := exec.Command("osascript", "-e", script).CombinedOutput()
-	if err != nil {
-		g.logf("No se pudo conceder el acceso: %v", err)
-		g.showError("No se pudo conceder el acceso.\n\nPuedes ejecutarlo manualmente en Terminal:\n\nsudo chmod o+rw /dev/bpf*")
-		return
-	}
-	if s := strings.TrimSpace(string(out)); s != "" {
-		g.logf("%s", s)
-	}
-	g.logf("Acceso a la captura concedido (servicio %s). Reintentando…", bpfDaemonLabel)
-	// Retry automatically so the user does not have to press Iniciar again.
-	fyne.Do(func() { g.start() })
 }
 
 // runSelfTest performs a short capture and reports whether it works. It is used

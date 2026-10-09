@@ -31,6 +31,16 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
   (`/Library/LaunchDaemons/es.artica.netflowprobe.chmodbpf.plist`) and retries
   automatically. Removed the misleading link to System Settings — macOS has no
   Privacy toggle for packet capture.
+- Cross-platform GUI: the Fyne front-end now also builds for **Windows** (shared
+  code, platform-specific permission flow). On Windows it runs elevated
+  (manifest `requireAdministrator`) and offers a "relaunch as administrator"
+  action; the interface selector is hidden (WinDivert captures the whole host).
+- Windows packaging: `scripts/build-windows.ps1` (GUI + agent, icon and manifest
+  via `rsrc`), `scripts/fetch-windivert.ps1` (WinDivert DLL/driver),
+  `packaging/windows/AppIcon.ico` and `packaging/windows/app.manifest`.
+- Windows service: the agent installs/runs as a Windows service
+  (`netflow-probe.exe -install -config …`) via `github.com/kardianos/service`.
+- `docs/gui-windows.md`.
 
 ### Fixed
 - The GUI **Detener** button did nothing: the start/stop button shared the start

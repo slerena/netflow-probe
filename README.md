@@ -87,6 +87,10 @@ open "dist/Pandora FMS Netflow Probe.app"
 Ver [docs/gui-macos.md](docs/gui-macos.md). Requiere cgo y Xcode CLT; el resto
 del proyecto sigue siendo puro Go.
 
+La **misma app compila para Windows** (GUI + bandeja + auto-elevación); ver
+[docs/gui-windows.md](docs/gui-windows.md). El agente también funciona como
+**servicio de Windows** (`netflow-probe.exe -install -config …`).
+
 ## Licencia
 
 GPL-2.0. Ver [LICENSE](LICENSE). Nota: el backend de Windows usa WinDivert, que

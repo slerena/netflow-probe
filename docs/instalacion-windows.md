@@ -3,9 +3,20 @@
 El agente usa **WinDivert** para capturar. WinDivert es un driver de kernel: hay
 que instalarlo y el proceso que captura debe ser **administrador**.
 
-> Estado actual: el binario ya captura en Windows, pero el **instalador y el
-> servicio están pendientes** (ver hoja de ruta). Abajo se describe el
-> funcionamiento previsto y lo necesario para probarlo ya.
+> Estado actual: hay **GUI**, **servicio** y scripts de empaquetado. Ver
+> [gui-windows.md](gui-windows.md) para construir la app y el servicio.
+
+## Construir
+
+En Windows, con Go 1.27+ y un compilador C (mingw-w64/TDM-GCC):
+
+```powershell
+pwsh scripts\build-windows.ps1      # GUI (.exe sin consola, auto-elevada) + agente/servicio
+pwsh scripts\fetch-windivert.ps1    # copia WinDivert.dll + WinDivert64.sys junto al .exe
+```
+
+El manifiesto pide `requireAdministrator`, así que Windows muestra el UAC al
+abrir la GUI y la captura funciona sin pasos extra.
 
 ## Requisitos
 
@@ -54,6 +65,15 @@ En Windows, `filter` (config o por código) usa el lenguaje de WinDivert:
 3. **Firma de código** del binario (recomendado para evitar SmartScreen).
 4. Nota legal: si algún día se empaqueta Npcap en lugar de WinDivert, hará falta
    **licencia OEM** de Nmap; con WinDivert no (GPL-2.0/LGPL-3.0).
+
+## Servicio de Windows
+
+Para capturar sin sesión de usuario ni consola:
+
+```powershell
+.\netflow-probe.exe -install -config "C:\ProgramData\Pandora\netflow-probe.yaml"
+.\netflow-probe.exe -uninstall
+```
 
 ## Solución de problemas
 
