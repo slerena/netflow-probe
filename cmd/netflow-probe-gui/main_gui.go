@@ -1,9 +1,10 @@
-//go:build (darwin || windows) && cgo
+//go:build (darwin || windows || linux) && cgo
 
 // Command netflow-probe-gui is a desktop front-end (proof of concept) for the
-// netflow-probe capture engine on macOS and Windows. It targets non-technical
-// users: point it at the Pandora collector and press Start/Stop; when the OS
-// blocks capture it guides the user to grant the required permission.
+// netflow-probe capture engine on macOS, Windows and Linux. It targets
+// non-technical users: point it at the Pandora collector and press Start/Stop;
+// when the OS blocks capture it guides the user to grant the required
+// permission.
 package main
 
 import (
@@ -534,13 +535,15 @@ func interfaceOptions() (labels []string, byLabel, byDevice map[string]string) {
 			continue
 		}
 		desc := ports[iface.Name]
+		physical := desc != ""
 		if desc == "" {
 			desc = kindOfInterface(iface.Name)
+			physical = desc == "Ethernet" || desc == "Wi-Fi"
 		}
 		items = append(items, item{
 			label:    interfaceLabel(desc, iface.Name, ip),
 			device:   iface.Name,
-			physical: ports[iface.Name] != "",
+			physical: physical,
 		})
 	}
 
@@ -571,18 +574,22 @@ func interfaceLabel(desc, name string, ip net.IP) string {
 	}
 }
 
-// kindOfInterface gives a generic description when macOS reports no hardware
-// port for the device.
+// kindOfInterface gives a generic description when the OS does not report a
+// friendly hardware port (macOS uses networksetup; Linux/Windows use prefixes).
 func kindOfInterface(name string) string {
 	switch {
+	case strings.HasPrefix(name, "wlan"), strings.HasPrefix(name, "wlp"),
+		strings.HasPrefix(name, "wl"), strings.HasPrefix(name, "wifi"):
+		return "Wi-Fi"
+	case strings.HasPrefix(name, "eth"), strings.HasPrefix(name, "en"),
+		strings.HasPrefix(name, "em"):
+		return "Ethernet"
 	case strings.HasPrefix(name, "utun"), strings.HasPrefix(name, "ipsec"),
 		strings.HasPrefix(name, "tun"), strings.HasPrefix(name, "tap"),
-		strings.HasPrefix(name, "ppp"):
+		strings.HasPrefix(name, "wg"), strings.HasPrefix(name, "ppp"):
 		return "VPN"
-	case strings.HasPrefix(name, "bridge"):
+	case strings.HasPrefix(name, "bridge"), strings.HasPrefix(name, "br"):
 		return "Bridge"
-	case strings.HasPrefix(name, "en"):
-		return "Ethernet"
 	default:
 		return ""
 	}

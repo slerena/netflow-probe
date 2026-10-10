@@ -1,8 +1,8 @@
-//go:build !(darwin || windows) || !cgo
+//go:build !(darwin || windows || linux) || !cgo
 
-// The graphical front-end is available on macOS and Windows and requires cgo
-// (Cocoa/OpenGL via Fyne). On other platforms or without cgo this stub keeps
-// the package buildable.
+// The graphical front-end is available on macOS, Windows and Linux and requires
+// cgo (Fyne). On other platforms or without cgo this stub keeps the package
+// buildable.
 package main
 
 import (

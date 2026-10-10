@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Pandora FMS Netflow Probe
+GenericName=NetFlow probe
+Comment=Captura el tráfico del host y lo exporta como NetFlow v9 a Pandora FMS
+Exec=netflow-probe-gui
+Icon=netflow-probe
+Terminal=false
+Categories=Network;Monitor;
+Keywords=netflow;pandora;network;monitor;
+StartupNotify=true

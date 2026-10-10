@@ -87,9 +87,11 @@ open "dist/Pandora FMS Netflow Probe.app"
 Ver [docs/gui-macos.md](docs/gui-macos.md). Requiere cgo y Xcode CLT; el resto
 del proyecto sigue siendo puro Go.
 
-La **misma app compila para Windows** (GUI + bandeja + auto-elevación); ver
-[docs/gui-windows.md](docs/gui-windows.md). El agente también funciona como
-**servicio de Windows** (`netflow-probe.exe -install -config …`).
+La **misma app compila para Windows y Linux**:
+- Windows: GUI + bandeja + auto-elevación; ver [docs/gui-windows.md](docs/gui-windows.md).
+  El agente también funciona como **servicio de Windows** (`netflow-probe.exe -install -config …`).
+- Linux: GUI + bandeja + `CAP_NET_RAW`; ver [docs/gui-linux.md](docs/gui-linux.md).
+  Servicio **systemd** con `AmbientCapabilities=CAP_NET_RAW` (`netflow-probe -install -config …`).
 
 ## Licencia
 

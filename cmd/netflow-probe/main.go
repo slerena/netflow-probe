@@ -29,6 +29,25 @@ var version = "dev"
 // serviceName is the OS service identifier (Windows SCM, launchd, systemd).
 const serviceName = "PandoraFMSNetflowProbe"
 
+// systemdUnit is a custom systemd unit that grants CAP_NET_RAW to the service,
+// so it can capture (AF_PACKET) without running as root.
+const systemdUnit = `[Unit]
+Description={{Description}}
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart={{Path | cmdEscape}}{{range Arguments}} {{. | cmd}}{{end}}
+Restart=always
+RestartSec=5
+AmbientCapabilities=CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_RAW
+
+[Install]
+WantedBy=multi-user.target
+`
+
 func main() {
 	var (
 		cfgPath   = flag.String("config", "", "path to a YAML config file")
@@ -237,6 +256,7 @@ func runService(install, uninstall bool, cfgPath string) error {
 		DisplayName: "Pandora FMS Netflow Probe",
 		Description: "Captura el tráfico del host y lo exporta como NetFlow v9 al colector de Pandora FMS.",
 		Arguments:   args,
+		Option:      service.KeyValue{"SystemdScript": systemdUnit},
 	}
 	s, err := service.New(&agentProgram{cfgPath: cfgPath}, svcConfig)
 	if err != nil {
