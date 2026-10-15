@@ -9,6 +9,9 @@
 *.pcap
 *.pcapng
 
+# Python venv for DMG packaging (dmgbuild)
+.venv/
+
 # OS noise
 .DS_Store
 Thumbs.db

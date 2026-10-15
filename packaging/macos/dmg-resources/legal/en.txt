@@ -1,0 +1,15 @@
+PANDORA FMS NETFLOW PROBE — LICENSE NOTICE
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License, version 2 (GPL-2.0), as published
+by the Free Software Foundation. See the project's LICENSE file.
+
+It is distributed WITHOUT ANY WARRANTY, not even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GPL-2.0 for
+details.
+
+Capturing network traffic may be subject to privacy and data-protection laws.
+You are responsible for using it lawfully and for being authorised over the
+traffic you capture.
+
+By continuing you acknowledge that you have read and accept these terms.

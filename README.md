@@ -82,6 +82,10 @@ colector, Iniciar/Detener y registro. Incluye el flujo de **permisos de macOS**
 ```sh
 make macapp
 open "dist/Pandora FMS Netflow Probe.app"
+
+# Instalador DMG (arrastrar a Aplicaciones), con dmgbuild:
+make dmg
+open "dist/Pandora FMS Netflow Probe.dmg"
 ```
 
 Ver [docs/gui-macos.md](docs/gui-macos.md). Requiere cgo y Xcode CLT; el resto

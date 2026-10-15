@@ -3,7 +3,7 @@ PKG     := ./cmd/netflow-probe
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: all build test vet fmt tidy clean dist windows linux darwin macapp linux-gui
+.PHONY: all build test vet fmt tidy clean dist windows linux darwin macapp dmg linux-gui
 
 all: build
 
@@ -46,9 +46,14 @@ linux:
 darwin:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags "$(LDFLAGS)" -o $(BINARY) $(PKG)
 
-## macOS GUI bundle (.app) with the Pandora icon. Requires cgo + Xcode CLT.
+## macOS GUI bundle (.app) + ZIP with the Pandora icon. Requires cgo + Xcode CLT.
 macapp:
-	bash scripts/build-macos-app.sh
+	bash packaging/macos/make_app.sh
+
+## macOS installer (.dmg, arrastrar a Aplicaciones). Requires dmgbuild:
+##   python3 -m venv .venv && .venv/bin/pip install dmgbuild pillow
+dmg:
+	bash packaging/macos/make_dmg.sh
 
 ## Linux GUI. Must run ON Linux with cgo + Fyne deps (see docs/gui-linux.md).
 linux-gui:

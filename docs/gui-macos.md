@@ -2,7 +2,8 @@
 
 App de escritorio (Fyne) que envuelve el motor de captura para que un usuario no
 técnico pueda elegir la interfaz y el colector, arrancar/parar y ver el registro.
-Primera versión **solo macOS** (es lo que hay para la PoC). Requiere **cgo** y el
+Esta guía cubre **macOS**; la misma app compila para Windows
+(`docs/gui-windows.md`) y Linux (`docs/gui-linux.md`). Requiere **cgo** y el
 toolchain de Apple (Fyne usa Cocoa/OpenGL).
 
 ## Compilar y abrir
@@ -12,14 +13,30 @@ make macapp
 open "dist/Pandora FMS Netflow Probe.app"
 ```
 
-`make macapp` ejecuta `scripts/build-macos-app.sh`, que:
+`make macapp` ejecuta `packaging/macos/make_app.sh`, que:
 1. compila `cmd/netflow-probe-gui` con cgo,
-2. monta `dist/Pandora FMS Netflow Probe.app` con `Info.plist`,
-3. copia el icono `packaging/macos/AppIcon.icns` (icono del agente Pandora),
-4. firma **ad-hoc** para pruebas locales.
+2. monta `dist/Pandora FMS Netflow Probe.app` con `packaging/macos/Info.plist`,
+3. genera el icono `AppIcon.icns` a partir de `cmd/netflow-probe-gui/icon.png`,
+4. firma **ad-hoc** (o con `SIGN_IDENTITY`) y crea un **ZIP** con `ditto`.
 
-> En el resto de plataformas la ruta GUI compila a un *stub* que avisa de que la
-> interfaz solo está en macOS. Así el proyecto sigue cross-compilando sin cgo.
+> Si no hay GUI para la plataforma (o `CGO_ENABLED=0`), el paquete compila a un
+> *stub*; el proyecto sigue cross-compilando sin cgo.
+
+## Instalador (DMG)
+
+Para distribuir, genera el instalador de macOS (arrastrar a Aplicaciones), con
+fondo y aviso de licencia:
+
+```sh
+python3 -m venv .venv && .venv/bin/pip install dmgbuild pillow   # una vez
+PYTHON=.venv/bin/python make dmg
+open "dist/Pandora FMS Netflow Probe.dmg"
+```
+
+`make dmg` ejecuta `packaging/macos/make_dmg.sh`: empaqueta el `.app`, construye
+el DMG con **dmgbuild** (fondo `dmg-resources/dmg-bg.png`, enlace a
+Aplicaciones) y le añade el aviso de licencia (GPL-2.0) con `hdiutil udifrez`.
+El fondo se regenera con `python3 packaging/macos/dmg-resources/make_bg.py`.
 
 ## Uso
 
@@ -90,5 +107,6 @@ el error y el remedio (`sudo chmod o+rw /dev/bpf*`).
 | Código GUI (macOS) | `cmd/netflow-probe-gui/main_gui.go` |
 | Stub otras plataformas | `cmd/netflow-probe-gui/main_stub.go` |
 | Icono en runtime | `cmd/netflow-probe-gui/icon.png` |
-| Icono del bundle | `packaging/macos/AppIcon.icns` |
-| Script de empaquetado | `scripts/build-macos-app.sh` |
+| Empaquetado `.app` | `packaging/macos/make_app.sh` |
+| Instalador `.dmg` | `packaging/macos/make_dmg.sh` |
+| Recursos del DMG | `packaging/macos/dmg-resources/` |
