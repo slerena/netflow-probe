@@ -1,15 +1,9 @@
 PANDORA FMS NETFLOW PROBE — AVISO DE LICENCIA
 
-Este programa es software libre: puedes redistribuirlo y/o modificarlo bajo los
-términos de la Licencia Pública General de GNU, versión 2 (GPL-2.0), publicada
-por la Free Software Foundation. Consulta el fichero LICENSE del proyecto.
+Este programa es software libre: puedes redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General de GNU, versión 2 (GPL-2.0), publicada por la Free Software Foundation. Consulta el fichero LICENSE del proyecto.
 
-Se distribuye SIN NINGUNA GARANTÍA, ni siquiera la garantía implícita de
-COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO PARTICULAR. Consulta la GPL-2.0
-para más detalle.
+Se distribuye SIN NINGUNA GARANTÍA, ni siquiera la garantía implícita de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO PARTICULAR. Consulta la GPL-2.0 para más detalle.
 
-La captura de tráfico puede estar sujeta a la normativa aplicable en materia de
-privacidad y protección de datos. Eres responsable de utilizarlo conforme a la
-ley y de disponer de autorización sobre el tráfico que captures.
+La captura de tráfico puede estar sujeta a la normativa aplicable en materia de privacidad y protección de datos. Eres responsable de utilizarlo conforme a la ley y de disponer de autorización sobre el tráfico que captures.
 
 Al continuar declaras que has leído y aceptas estos términos.
