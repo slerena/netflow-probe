@@ -3,7 +3,7 @@
 All notable changes to this project are documented here.
 This project follows [Conventional Commits](https://www.conventionalcommits.org/).
 
-## [Unreleased]
+## [1.0.0] - 2026-10-17
 
 ### Added
 - Configuration model (YAML) with Pandora FMS defaults (`collector` + `port: 9995`).

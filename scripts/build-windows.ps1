@@ -9,7 +9,7 @@
 #
 # Usage (from a Developer PowerShell):  pwsh scripts\build-windows.ps1
 param(
-    [string]$Version = "0.1.0"
+    [string]$Version = "1.0.0"
 )
 
 $ErrorActionPreference = "Stop"
