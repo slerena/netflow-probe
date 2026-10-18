@@ -3,6 +3,20 @@
 All notable changes to this project are documented here.
 This project follows [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [1.0.35] - 2026-10-18
+
+### Added
+- Linux `.deb` installer (`make linux-deb`): installs the GUI and CLI in
+  `/usr/bin`, the desktop entry and icon, and applies `CAP_NET_RAW` in
+  `postinst` (depends on `libcap2-bin`). Prepared for Ubuntu/Debian.
+
+## [1.0.34] - 2026-10-18
+
+### Fixed
+- Windows capture no longer blocks the host network: WinDivert is opened in
+  **sniff mode** (`FlagSniff`) so packets are copied instead of intercepted.
+  Verified with `curl`/`ping` while capturing.
+
 ## [1.0.33] - 2026-10-18
 
 ### Changed
