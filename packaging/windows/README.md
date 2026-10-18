@@ -8,7 +8,7 @@ Pandora MINI. Ver también [../../docs/gui-windows.md](../../docs/gui-windows.md
 | `PandoraFMSNetflowProbe.nsi` | Instalador NSIS (es/en, licencia, componentes, desinstalador). |
 | `make_installer.sh` | Genera `dist/Pandora FMS Netflow Probe Setup <ver>.exe` (makensis). |
 | `make_zip.sh` | Genera `dist/Pandora FMS Netflow Probe <ver> (Windows).zip`. |
-| `write_launcher.sh` | Escribe `Modo compatible.bat` (Mesa/llvmpipe). |
+| `write_launcher.sh` | (eliminado: el relevo a Mesa es automático e interno). |
 | `make_assets.py` | Genera `AppIcon.ico`, `welcome.bmp`, `header.bmp`. |
 | `make_license_rtf.py` | Convierte la licencia UTF-8 a RTF para NSIS. |
 | `LEEME.txt` | Léeme del paquete (modos, WinDivert, colector, servicio). |
@@ -26,7 +26,7 @@ PandoraFMSNetflowProbe.exe     GUI compilada (con manifiesto/icono)
 netflow-probe.exe              agente/servicio (CGO_ENABLED=0)
 WinDivert.dll                  WinDivert 2.2.2
 WinDivert64.sys
-mesa/opengl32.dll              Mesa llvmpipe (modo compatible)
+mesa/opengl32.dll              Mesa llvmpipe (fallback interno)
 mesa/libgallium_wgl.dll
 ```
 
@@ -44,11 +44,11 @@ make windows-installer   # instalador NSIS
 
 Salida en `dist/`:
 
-- `Pandora FMS Netflow Probe <ver> (Windows).zip` — modo normal + `swgl/` (Mesa)
-  + `Modo compatible.bat` + LEEME.
+- `Pandora FMS Netflow Probe <ver> (Windows).zip` — modo normal + `swgl/`
+  (Mesa) + LEEME.
 - `Pandora FMS Netflow Probe Setup <ver>.exe` — instalador con licencia,
-  componentes (app, escritorio, modo compatible), accesos directos y
-  desinstalador registrado en "Aplicaciones instaladas".
+  componentes (app, escritorio), accesos directos y desinstalador registrado en
+  "Aplicaciones instaladas".
 
 ## 3. Notas
 
@@ -56,7 +56,8 @@ Salida en `dist/`:
   necesita admin para WinDivert).
 - La configuración del usuario (`%USERPROFILE%\.netflow-probe.yaml`) **no** se
   toca al instalar/desinstalar.
-- El modo compatible (Mesa) es necesario en VMs/RDP sin OpenGL 2.x; en hardware
-  normal se usa el ejecutable de la raíz.
+- La copia interna con Mesa (`swgl/`) se instala siempre y el ejecutable normal
+  se relanza solo en ella si el equipo no da OpenGL 2.1. El usuario no ve nada:
+  ni componente, ni acceso directo, ni lanzador.
 - El agente `netflow-probe.exe` puede instalarse como servicio:
   `netflow-probe.exe -install -config "C:\ProgramData\Pandora\netflow-probe.yaml"`.

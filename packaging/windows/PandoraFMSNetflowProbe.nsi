@@ -106,13 +106,6 @@ LangString TXT_SEC_DSK     ${LANG_EN} "Desktop shortcut"
 LangString TXT_SEC_DSK_D   ${LANG_ES} "Crea un icono en el escritorio."
 LangString TXT_SEC_DSK_D   ${LANG_EN} "Creates a desktop icon."
 
-LangString TXT_SEC_SWGL    ${LANG_ES} "Modo compatible (equipos sin OpenGL 2.x)"
-LangString TXT_SEC_SWGL    ${LANG_EN} "Compatible mode (computers without OpenGL 2.x)"
-LangString TXT_SEC_SWGL_D  ${LANG_ES} "Copia del programa con Mesa que dibuja por software. Necesario en máquinas virtuales, escritorio remoto (RDP) o drivers genéricos. Ocupa unos 60 MB más."
-LangString TXT_SEC_SWGL_D  ${LANG_EN} "A copy of the program with Mesa that renders in software. Needed on virtual machines, remote desktop (RDP) or generic drivers. Takes about 60 MB more."
-LangString TXT_SWGL_SH      ${LANG_ES} "Pandora FMS Netflow Probe (modo compatible)"
-LangString TXT_SWGL_SH      ${LANG_EN} "Pandora FMS Netflow Probe (compatible mode)"
-
 LangString TXT_UNINST_SH   ${LANG_ES} "Desinstalar Pandora FMS Netflow Probe"
 LangString TXT_UNINST_SH   ${LANG_EN} "Uninstall Pandora FMS Netflow Probe"
 
@@ -173,6 +166,19 @@ Section "$(TXT_SEC_APP)" SEC_APP
   File "/oname=${APP_ICO}" "${ICO}"
   File "/oname=LEEME.txt" "${LEEME}"
 
+!ifdef WITH_MESA
+  ; Copia interna con Mesa para equipos sin OpenGL 2.1 (VMs, RDP, drivers
+  ; genéricos). No se muestra al usuario: ni componente, ni acceso directo.
+  ; El ejecutable normal se relanza solo en esta copia cuando hace falta.
+  SetOutPath "$INSTDIR\swgl"
+  File "/oname=${APP_EXE}" "${EXE_SRC}"
+  File "/oname=WinDivert.dll" "${WINDIVERT_DLL}"
+  File "/oname=WinDivert64.sys" "${WINDIVERT_SYS}"
+  File "${MESA_DIR}/opengl32.dll"
+  File "${MESA_DIR}/libgallium_wgl.dll"
+  SetOutPath "$INSTDIR"
+!endif
+
   CreateDirectory "$SMPROGRAMS\${APP_NAME}"
   CreateShortCut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_ICO}"
   CreateShortCut "$SMPROGRAMS\${APP_NAME}\$(TXT_UNINST_SH).lnk" "$INSTDIR\Uninstall.exe"
@@ -198,27 +204,9 @@ Section "$(TXT_SEC_DSK)" SEC_DESKTOP
   CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}" "" "$INSTDIR\${APP_ICO}"
 SectionEnd
 
-!ifdef WITH_MESA
-Section "$(TXT_SEC_SWGL)" SEC_SWGL
-  SetRegView 64
-  SetOutPath "$INSTDIR\swgl"
-  File "/oname=${APP_EXE}" "${EXE_SRC}"
-  File "/oname=WinDivert.dll" "${WINDIVERT_DLL}"
-  File "/oname=WinDivert64.sys" "${WINDIVERT_SYS}"
-  File "${MESA_DIR}/opengl32.dll"
-  File "${MESA_DIR}/libgallium_wgl.dll"
-  SetOutPath "$INSTDIR"
-  File "/oname=Modo compatible.bat" "${COMPAT_BAT}"
-  CreateShortCut "$SMPROGRAMS\${APP_NAME}\$(TXT_SWGL_SH).lnk" "$INSTDIR\Modo compatible.bat" "" "$INSTDIR\${APP_ICO}"
-SectionEnd
-!endif
-
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_APP} $(TXT_SEC_APP_D)
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_DESKTOP} $(TXT_SEC_DSK_D)
-!ifdef WITH_MESA
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_SWGL} $(TXT_SEC_SWGL_D)
-!endif
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ; --- desinstalación (NO toca la configuración del usuario) ------------------
@@ -234,7 +222,6 @@ Section "Uninstall"
   Delete "$INSTDIR\swgl\libgallium_wgl.dll"
   RMDir "$INSTDIR\swgl"
 
-  Delete "$INSTDIR\Modo compatible.bat"
   Delete "$INSTDIR\LEEME.txt"
   Delete "$INSTDIR\${APP_EXE}"
   Delete "$INSTDIR\netflow-probe.exe"
@@ -247,8 +234,6 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk"
   Delete "$SMPROGRAMS\${APP_NAME}\Desinstalar Pandora FMS Netflow Probe.lnk"
   Delete "$SMPROGRAMS\${APP_NAME}\Uninstall Pandora FMS Netflow Probe.lnk"
-  Delete "$SMPROGRAMS\${APP_NAME}\Pandora FMS Netflow Probe (modo compatible).lnk"
-  Delete "$SMPROGRAMS\${APP_NAME}\Pandora FMS Netflow Probe (compatible mode).lnk"
   RMDir "$SMPROGRAMS\${APP_NAME}"
   Delete "$DESKTOP\${APP_NAME}.lnk"
 

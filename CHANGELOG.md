@@ -3,6 +3,15 @@
 All notable changes to this project are documented here.
 This project follows [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [1.0.33] - 2026-10-18
+
+### Changed
+- Windows installer: the Mesa `swgl/` fallback is installed **silently** as part
+  of the app. Removed the "compatible mode" component, its Start Menu shortcut
+  and `Modo compatible.bat` from the installer and portable ZIP, and removed all
+  OpenGL/Mesa references from the user-facing LEEME. It is an internal detail:
+  the normal executable relaunches itself when needed.
+
 ## [1.0.32] - 2026-10-18
 
 ### Added

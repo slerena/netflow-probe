@@ -68,9 +68,8 @@ check_mesa() {
 MESA_ARGS=()
 if [ -f "$MESA/opengl32.dll" ] && [ -f "$MESA/libgallium_wgl.dll" ]; then
 	check_mesa
-	"$WIN/write_launcher.sh" "$TMP/Modo compatible.bat"
-	MESA_ARGS=(-DWITH_MESA=1 -DMESA_DIR="$PWD/$MESA" -DCOMPAT_BAT="$TMP/Modo compatible.bat")
-	echo "Modo compatible: incluido (Mesa)"
+	MESA_ARGS=(-DWITH_MESA=1 -DMESA_DIR="$PWD/$MESA")
+	echo "Modo compatible interno: incluido (Mesa)"
 else
 	echo "AVISO: sin Mesa en $MESA; el instalador saldrá sólo en modo hardware." >&2
 fi

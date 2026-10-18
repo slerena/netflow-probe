@@ -56,8 +56,7 @@ if [ -f "$MESA/opengl32.dll" ] && [ -f "$MESA/libgallium_wgl.dll" ]; then
 	cp "$EXE" "$STAGE/swgl/PandoraFMSNetflowProbe.exe"
 	cp "$WD_DLL" "$WD_SYS" "$STAGE/swgl/"
 	cp "$MESA/opengl32.dll" "$MESA/libgallium_wgl.dll" "$STAGE/swgl/"
-	"$WIN/write_launcher.sh" "$STAGE/Modo compatible.bat"
-	echo "Modo compatible: incluido (Mesa)"
+	echo "Modo compatible interno: incluido (Mesa)"
 else
 	echo "AVISO: sin Mesa; el ZIP saldrá sólo en modo hardware." >&2
 fi

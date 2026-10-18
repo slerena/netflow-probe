@@ -30,7 +30,7 @@ Además de los binarios sueltos, hay dos paquetes listos para distribuir (ver
 
 - **ZIP portable**: `make windows-zip` →
   `dist/Pandora FMS Netflow Probe <ver> (Windows).zip` con la GUI, el agente,
-  WinDivert y `swgl/` (Mesa) + `Modo compatible.bat`.
+  WinDivert y `swgl/` (Mesa, interno).
 - **Instalador NSIS**: `make windows-installer` →
   `dist/Pandora FMS Netflow Probe Setup <ver>.exe` (licencia, componentes,
   accesos directos y desinstalador). Se compila desde macOS/Linux con
