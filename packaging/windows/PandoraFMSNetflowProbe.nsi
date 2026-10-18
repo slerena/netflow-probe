@@ -61,6 +61,9 @@ Unicode true
 
 !define APP_NAME "Pandora FMS Netflow Probe"
 !define APP_EXE "PandoraFMSNetflowProbe.exe"
+; tasklist trunca el nombre de imagen (~24 chars) en su salida, así que el
+; chequeo de "app en ejecución" busca un prefijo corto, no APP_EXE completo.
+!define APP_IMAGE_PREFIX "PandoraFMSNetflow"
 !define APP_ICO "AppIcon.ico"
 !define PUBLISHER "Pandora FMS"
 !define APP_KEY "Software\PandoraFMS\NetflowProbe"
@@ -149,7 +152,7 @@ Function .onInit
   Abort
 
 checkRunning:
-  nsExec::ExecToStack 'cmd /C tasklist /FI "IMAGENAME eq ${APP_EXE}" /NH | findstr /I "${APP_EXE}"'
+  nsExec::ExecToStack 'cmd /C tasklist /FI "IMAGENAME eq ${APP_EXE}" /NH | find /I "${APP_IMAGE_PREFIX}"'
   Pop $0
   Pop $1
   StrCmp $0 "0" 0 done
