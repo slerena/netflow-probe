@@ -12,6 +12,7 @@ Pandora MINI. Ver también [../../docs/gui-windows.md](../../docs/gui-windows.md
 | `make_assets.py` | Genera `AppIcon.ico`, `welcome.bmp`, `header.bmp`. |
 | `make_license_rtf.py` | Convierte la licencia UTF-8 a RTF para NSIS. |
 | `LEEME.txt` | Léeme del paquete (modos, WinDivert, colector, servicio). |
+| `fetch_mesa.sh` | Descarga Mesa 26.2.4 y verifica SHA-256. |
 | `app.manifest` | Manifiesto `requireAdministrator` del `.exe`. |
 | `payload/` | **No versionado**: `.exe` compilado + WinDivert + Mesa. |
 

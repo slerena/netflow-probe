@@ -5,7 +5,6 @@ package main
 import (
 	"encoding/base64"
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -58,7 +57,7 @@ func (g *gui) requestPlatformPermission() {
 	)
 	script := `do shell script "` + cmd + `" with administrator privileges`
 
-	out, err := exec.Command("osascript", "-e", script).CombinedOutput()
+	out, err := newCommand("osascript", "-e", script).CombinedOutput()
 	if err != nil {
 		g.logf("No se pudo conceder el acceso: %v", err)
 		g.showError("No se pudo conceder el acceso.\n\nPuedes ejecutarlo manualmente en Terminal:\n\nsudo chmod o+rw /dev/bpf*")

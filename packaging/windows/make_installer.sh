@@ -48,8 +48,26 @@ python3 "$WIN/make_license_rtf.py" "$LEGAL/es.txt" "$TMP/es.rtf"
 python3 "$WIN/make_license_rtf.py" "$LEGAL/en.txt" "$TMP/en.rtf"
 { printf '\xef\xbb\xbf'; cat "$WIN/LEEME.txt"; } > "$TMP/LEEME.txt"
 
+# Mesa probada (26.2.4 release-msvc). Si no coincide, se aborta: otra build
+# puede tomar el camino D3D12 y hacer que Fyne no arranque.
+check_mesa() {
+	local want_ogl="75b295fc80df0eaa8f1264c28663f6932c8b72d36513eb092556608858b7f5e0"
+	local want_gal="53e49adf87590d5b0cab8553b1e98084812040cc1fca8c487695b17b7af3702e"
+	local sha_cmd got
+	if command -v sha256sum >/dev/null 2>&1; then
+		sha_cmd() { sha256sum "$1" | awk '{print $1}'; }
+	else
+		sha_cmd() { shasum -a 256 "$1" | awk '{print $1}'; }
+	fi
+	got="$(sha_cmd "$MESA/opengl32.dll")"
+	[ "$got" = "$want_ogl" ] || { echo "Mesa opengl32.dll inesperado ($got)" >&2; exit 1; }
+	got="$(sha_cmd "$MESA/libgallium_wgl.dll")"
+	[ "$got" = "$want_gal" ] || { echo "Mesa libgallium_wgl.dll inesperado ($got)" >&2; exit 1; }
+}
+
 MESA_ARGS=()
 if [ -f "$MESA/opengl32.dll" ] && [ -f "$MESA/libgallium_wgl.dll" ]; then
+	check_mesa
 	"$WIN/write_launcher.sh" "$TMP/Modo compatible.bat"
 	MESA_ARGS=(-DWITH_MESA=1 -DMESA_DIR="$PWD/$MESA" -DCOMPAT_BAT="$TMP/Modo compatible.bat")
 	echo "Modo compatible: incluido (Mesa)"

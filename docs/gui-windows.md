@@ -68,6 +68,18 @@ resuelve de dos formas:
 No hay que elegir interfaz: WinDivert captura todo el equipo. La GUI lo indica y
 oculta el selector.
 
+## Portabilidad visual (VMs, RDP, drivers antiguos)
+
+- El ejecutable normal comprueba **OpenGL 2.1** al arrancar (ventana oculta de
+  prueba). Si el equipo no lo ofrece y existe `swgl\`, **se relanza solo** con
+  Mesa/llvmpipe (`GALLIUM_DRIVER=llvmpipe`, con marca para no recursar). Si
+  tampoco hay `swgl\`, muestra un aviso nativo (MessageBox) y sale, en vez de
+  fallar en silencio.
+- Los procesos hijos (powershell, etc.) se lanzan con `CREATE_NO_WINDOW` +
+  `HideWindow`, así no aparece una consola que parpadea.
+- Mesa va **pinneada por SHA-256**; `packaging/windows/fetch_mesa.sh` la
+  descarga y verifica. Otra build puede tomar el camino D3D12 y no arrancar.
+
 ## Uso
 
 1. **Colector NetFlow (Pandora)**: IP/host del servidor; **Puerto**: `9995`.

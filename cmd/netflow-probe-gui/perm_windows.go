@@ -5,7 +5,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 
 	"fyne.io/fyne/v2"
 )
@@ -30,7 +29,7 @@ func (g *gui) requestPlatformPermission() {
 		g.showError("No se pudo localizar el ejecutable.")
 		return
 	}
-	cmd := exec.Command("powershell", "-NoProfile", "-Command",
+	cmd := newCommand("powershell", "-NoProfile", "-Command",
 		fmt.Sprintf("Start-Process -Verb RunAs -FilePath '%s'", exe))
 	if err := cmd.Start(); err != nil {
 		g.logf("No se pudo reiniciar como administrador: %v", err)

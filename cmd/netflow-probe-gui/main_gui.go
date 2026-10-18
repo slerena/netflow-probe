@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -86,11 +85,24 @@ func main() {
 		return
 	}
 
+	// Windows sin OpenGL 2.1: Fyne arranca, NO crea ventana y termina en
+	// silencio. Se comprueba antes de app.New(); si el paquete trae swgl\
+	// (Mesa), la app se relanza sola en modo compatible.
+	if !glUsable() {
+		if tryCompatRelaunch() {
+			return
+		}
+		showGLWarning()
+		return
+	}
+
 	a := app.New()
-	a.SetIcon(fyne.NewStaticResource("icon.png", iconPNG))
+	icon := fyne.NewStaticResource("icon.png", iconPNG)
+	a.SetIcon(icon)
 
 	g := &gui{app: a}
 	g.win = a.NewWindow("Pandora FMS Netflow Probe")
+	g.win.SetIcon(icon)
 	g.buildUI()
 	g.loadConfig()
 	g.setupTray(a)
@@ -629,7 +641,7 @@ func usableAddr(iface net.Interface) (net.IP, bool) {
 // hardwarePorts maps a BSD device name (en0, en1, ...) to the friendly hardware
 // port name reported by macOS ("Wi-Fi", "Thunderbolt 1", ...). Best effort.
 func hardwarePorts() map[string]string {
-	out, err := exec.Command("networksetup", "-listallhardwareports").Output()
+	out, err := newCommand("networksetup", "-listallhardwareports").Output()
 	if err != nil {
 		return nil
 	}
