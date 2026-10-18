@@ -105,6 +105,25 @@ El `postinst` ejecuta `setcap cap_net_raw+ep` sobre `netflow-probe-gui` y
 `netflow-probe`; por eso el paquete depende de `libcap2-bin`. El CLI puede
 instalarse como servicio con `sudo netflow-probe -install -config …`.
 
+## Instalador `.rpm` (Fedora)
+
+En Fedora, con `rpm-build` instalado y los binarios ya compilados en
+`dist/linux`:
+
+```sh
+sudo dnf install -y rpm-build
+make linux-rpm          # -> dist/netflow-probe-<ver>-1.fcXX.x86_64.rpm
+
+sudo dnf install ./dist/netflow-probe-<ver>-1.fcXX.x86_64.rpm
+netflow-probe-gui       # desde el menú "Pandora FMS Netflow Probe"
+sudo dnf remove netflow-probe
+```
+
+El RPM instala lo mismo que el `.deb` (GUI, CLI, menú, icono) y su `%post`
+aplica `CAP_NET_RAW`; depende de `libcap`, `libglvnd-glx`, `libX11` y
+`libwayland-client`. Se puede construir en Fedora a partir de los binarios
+compilados en cualquier Linux (misma arquitectura).
+
 ## Empaquetado (opcional)
 
 `fyne package -os linux` genera un `.tar.xz`/AppImage con icono y `.desktop`; o

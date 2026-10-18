@@ -3,6 +3,13 @@
 All notable changes to this project are documented here.
 This project follows [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [1.0.36] - 2026-10-18
+
+### Added
+- Linux `.rpm` installer for Fedora (`make linux-rpm`): same contents as the
+  `.deb` (GUI, CLI, desktop entry, icon) and `%post` applies `CAP_NET_RAW`.
+  Requires `libcap`, `libglvnd-glx`, `libX11` and `libwayland-client`.
+
 ## [1.0.35] - 2026-10-18
 
 ### Added
