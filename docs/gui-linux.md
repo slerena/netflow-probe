@@ -124,6 +124,24 @@ aplica `CAP_NET_RAW`; depende de `libcap`, `libglvnd-glx`, `libX11` y
 `libwayland-client`. Se puede construir en Fedora a partir de los binarios
 compilados en cualquier Linux (misma arquitectura).
 
+## Instalación a pelo (`.tar.gz`)
+
+Paquete portable con binarios, `.desktop`, icono, config de ejemplo e
+`install.sh`:
+
+```sh
+make linux-tar          # -> dist/netflow-probe-<ver>-linux-amd64.tar.gz
+tar -xzf dist/netflow-probe-<ver>-linux-amd64.tar.gz
+cd netflow-probe-<ver>-linux-amd64
+
+sudo ./install.sh              # sistema: /usr/local + CAP_NET_RAW
+./install.sh --user            # usuario: ~/.local (sin root)
+sudo ./install.sh --uninstall  # desinstalar (o --user --uninstall)
+```
+
+`install.sh` reescribe el `Exec` del lanzador con la ruta absoluta, actualiza
+las cachés de menú/iconos y no toca `~/.netflow-probe.yaml`.
+
 ## Empaquetado (opcional)
 
 `fyne package -os linux` genera un `.tar.xz`/AppImage con icono y `.desktop`; o

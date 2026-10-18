@@ -44,7 +44,7 @@ var iconPNG []byte
 var trayPNG []byte
 
 // version is overridden at build time with -ldflags "-X main.version=...".
-var version = "1.0.36"
+var version = "1.0.37"
 
 const configFileName = ".netflow-probe.yaml"
 

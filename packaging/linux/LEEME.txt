@@ -1,0 +1,56 @@
+Pandora FMS Netflow Probe — paquete portable para Linux
+=======================================================
+
+Contenido
+---------
+  netflow-probe-gui        Aplicación con interfaz (Fyne)
+  netflow-probe            Agente sin interfaz / servicio
+  netflow-probe.desktop    Entrada de menú
+  netflow-probe.png        Icono
+  netflow-probe.yaml.example  Configuración de ejemplo
+  install.sh               Instalador / desinstalador
+  LICENSE                  GPL-2.0
+
+Instalación en el sistema (recomendada)
+---------------------------------------
+  sudo ./install.sh
+
+Copia los binarios a /usr/local/bin, el lanzador y el icono, y aplica
+CAP_NET_RAW para capturar sin ejecutar como root. Aparece en el menú de
+aplicaciones como "Pandora FMS Netflow Probe".
+
+Instalación de usuario (sin root)
+---------------------------------
+  ./install.sh --user
+
+Copia a ~/.local. Para capturar sin root hay que dar el permiso una vez:
+
+  sudo setcap cap_net_raw+ep ~/.local/bin/netflow-probe-gui
+
+Desinstalar
+-----------
+  sudo ./install.sh --uninstall
+  # o, si fue de usuario:
+  ./install.sh --user --uninstall
+
+La configuración (~/.netflow-probe.yaml) no se borra.
+
+Uso
+---
+1. Abre la aplicación (menú o ~/.local/bin/netflow-probe-gui).
+2. Colector: IP o host del servidor Pandora FMS. Puerto: 9995.
+3. Iniciar → barra verde y contadores de paquetes/flujos.
+4. Guardar configuración escribe ~/.netflow-probe.yaml.
+
+Servicio (sin sesión gráfica)
+-----------------------------
+  sudo netflow-probe -install -config /etc/netflow-probe.yaml
+  sudo netflow-probe -uninstall
+
+Requisitos
+----------
+Linux x86-64 con libGL, libX11 y libwayland-client (un escritorio normal los
+tiene). Para capturar: CAP_NET_RAW (lo aplica install.sh) o root.
+
+Licencia GPL-2.0. Se distribuye SIN GARANTÍA.
+(c) Pandora FMS 2026

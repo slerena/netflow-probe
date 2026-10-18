@@ -3,6 +3,14 @@
 All notable changes to this project are documented here.
 This project follows [Conventional Commits](https://www.conventionalcommits.org/).
 
+## [1.0.37] - 2026-10-18
+
+### Added
+- Linux portable `.tar.gz` (`make linux-tar`) with an `install.sh`: system-wide
+  (`sudo ./install.sh`, applies `CAP_NET_RAW`), per-user (`--user`) and
+  `--uninstall`. Includes binaries, desktop entry, icon, example config and
+  LEEME.
+
 ## [1.0.36] - 2026-10-18
 
 ### Added

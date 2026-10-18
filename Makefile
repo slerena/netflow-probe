@@ -3,7 +3,7 @@ PKG     := ./cmd/netflow-probe
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: all build test vet fmt tidy clean dist windows linux darwin macapp dmg linux-gui linux-deb linux-rpm windows-zip windows-installer bump
+.PHONY: all build test vet fmt tidy clean dist windows linux darwin macapp dmg linux-gui linux-deb linux-rpm linux-tar windows-zip windows-installer bump
 
 all: build
 
@@ -66,6 +66,10 @@ linux-deb:
 ## Linux .rpm installer (Fedora). Must run ON Fedora with rpm-build.
 linux-rpm:
 	bash packaging/linux/make_rpm.sh
+
+## Linux portable .tar.gz (manual install). Uses dist/linux binaries.
+linux-tar:
+	bash packaging/linux/make_tarball.sh
 
 ## Windows portable ZIP (needs packaging/windows/payload + Mesa; see docs/gui-windows.md)
 windows-zip:
