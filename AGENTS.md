@@ -37,6 +37,19 @@ UDP/9995). Target principal: **Windows**. Ver [README.md](README.md) y
 - **Nunca** añadas trailers de atribución a IA ni `Co-Authored-By`.
 - Remoto: `git@brutus.artica.es:slerena/netflow-probe.git` (GitLab interno).
 
+## Versionado
+
+- La versión interna vive en `VERSION` y se replica en `packaging/macos/Info.plist`,
+  `scripts/build-windows.ps1`, `scripts/build-linux.sh` y el default de `version`
+  en ambos `main.go`.
+- **Súbela en cada iteración/commit** (aunque sea un fix pequeño) antes de
+  entregar:
+  ```sh
+  python3 scripts/bump_version.py 1.0.33   # o: make bump V=1.0.33
+  ```
+- El formato es `x.y.z` (tres componentes). No dejes dos commits seguidos con la
+  misma versión.
+
 ## Higiene de secretos
 
 - El token de GitLab vive en `~/.config/andelain/brutus.json` (0600). **No**

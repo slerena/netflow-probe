@@ -43,6 +43,9 @@ var iconPNG []byte
 //go:embed tray.png
 var trayPNG []byte
 
+// version is overridden at build time with -ldflags "-X main.version=...".
+var version = "1.0.32"
+
 const configFileName = ".netflow-probe.yaml"
 
 type session struct {
@@ -101,7 +104,7 @@ func main() {
 	a.SetIcon(icon)
 
 	g := &gui{app: a}
-	g.win = a.NewWindow("Pandora FMS Netflow Probe")
+	g.win = a.NewWindow("Pandora FMS Netflow Probe v" + version)
 	g.win.SetIcon(icon)
 	g.buildUI()
 	g.loadConfig()

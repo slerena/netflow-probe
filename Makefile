@@ -3,7 +3,7 @@ PKG     := ./cmd/netflow-probe
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: all build test vet fmt tidy clean dist windows linux darwin macapp dmg linux-gui windows-zip windows-installer
+.PHONY: all build test vet fmt tidy clean dist windows linux darwin macapp dmg linux-gui windows-zip windows-installer bump
 
 all: build
 
@@ -66,3 +66,8 @@ windows-zip:
 ## Windows NSIS installer (needs makensis + payload; see docs/gui-windows.md)
 windows-installer:
 	bash packaging/windows/make_installer.sh
+
+## Bump the internal version everywhere: make bump V=1.0.33
+bump:
+	@test -n "$(V)" || (echo "uso: make bump V=x.y.z" >&2; exit 1)
+	python3 scripts/bump_version.py $(V)
