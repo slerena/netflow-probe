@@ -44,7 +44,10 @@ func OpenLive(_ string, filter string) (Source, error) {
 	if filter == "" {
 		filter = "ip or ipv6"
 	}
-	h, err := divert.Open(filter, divert.LayerNetwork, divert.PriorityDefault, divert.FlagDefault)
+	// FlagSniff: WinDivert entrega una COPIA de los paquetes sin interceptarlos.
+	// Sin este flag, WinDivert los saca de la pila y, como solo hacemos Recv
+	// (no reinyectamos), el equipo se queda sin red mientras captura.
+	h, err := divert.Open(filter, divert.LayerNetwork, divert.PriorityDefault, divert.FlagSniff)
 	if err != nil {
 		return nil, fmt.Errorf("windivert open (%q): %w (¿proceso elevado y driver WinDivert presente?)", filter, err)
 	}
