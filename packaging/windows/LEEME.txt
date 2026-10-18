@@ -1,0 +1,66 @@
+Pandora FMS Netflow Probe — paquete para Windows (64 bits)
+==========================================================
+
+Este paquete trae DOS formas de arrancar la aplicación. Empieza por la primera:
+si se abre la ventana, ya está.
+
+1) PandoraFMSNetflowProbe.exe      -> MODO NORMAL (hardware)
+   Doble clic. Usa la tarjeta gráfica del equipo (OpenGL) y va más rápido.
+   Windows pedirá permisos de administrador: son necesarios para cargar el
+   driver de captura WinDivert.
+
+2) "Modo compatible.bat"           -> MODO COMPATIBLE (software)
+   Doble clic. Dibuja con la CPU usando Mesa (llvmpipe), no necesita OpenGL.
+
+¿Cuándo hay que usar el modo compatible?
+   Cuando el modo normal no abre ventana o falla al dibujar. Suele pasar en:
+     - máquinas virtuales (VirtualBox, VMware, QEMU/Proxmox con VGA/QXL),
+     - escritorio remoto (RDP) y Terminal Server,
+     - equipos con drivers gráficos genéricos o muy antiguos.
+
+Cómo usarlo
+-----------
+1. Abre la aplicación (modo normal o compatible).
+2. En "Colector NetFlow (Pandora)" escribe la IP o el host del servidor
+   Pandora FMS. El puerto por defecto es 9995.
+3. Pulsa "Iniciar". La barra verde indica que está capturando y verás los
+   contadores de paquetes, MB, flujos activos y exportados.
+4. "Guardar configuración" escribe %USERPROFILE%\.netflow-probe.yaml.
+
+WinDivert
+---------
+La captura la hace el driver WinDivert. WinDivert.dll y WinDivert64.sys deben
+estar junto al .exe (ya vienen en este paquete). Requiere administrador.
+WinDivert es dual LGPL-3.0 / GPL-2.0.
+
+Agente y servicio (netflow-probe.exe)
+-------------------------------------
+El paquete incluye también el agente sin interfaz, que puede correr como
+servicio de Windows (sin sesión de usuario):
+
+  netflow-probe.exe -install -config "C:\ProgramData\Pandora\netflow-probe.yaml"
+  netflow-probe.exe -uninstall
+
+El fichero de configuración debe existir y tener al menos:
+  collector: <ip-del-servidor-pandora>
+  port: 9995
+
+Por qué hay dos carpetas
+------------------------
+Si las librerías de Mesa estuvieran junto al ejecutable normal, se usarían
+SIEMPRE, también en equipos con buena tarjeta gráfica, y todo iría más lento.
+Por eso el modo compatible vive aparte, en swgl/, con su propio lanzador.
+
+  swgl\ contiene:
+    PandoraFMSNetflowProbe.exe
+    WinDivert.dll, WinDivert64.sys
+    opengl32.dll, libgallium_wgl.dll   (Mesa llvmpipe)
+
+Notas
+-----
+- No muevas los ficheros de swgl\ fuera de esa carpeta.
+- Windows de 64 bits (x86-64).
+- La configuración se guarda en el perfil del usuario, no aquí.
+- Licencia GPL-2.0. Se distribuye SIN GARANTÍA.
+
+(c) Pandora FMS 2026

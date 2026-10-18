@@ -12,6 +12,9 @@
 # Python venv for DMG packaging (dmgbuild)
 .venv/
 
+# Windows packaging payload (built .exe + vendor DLLs; regenerated on demand)
+packaging/windows/payload/
+
 # OS noise
 .DS_Store
 Thumbs.db

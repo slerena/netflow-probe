@@ -44,6 +44,11 @@ This project follows [Conventional Commits](https://www.conventionalcommits.org/
   `packaging/windows/AppIcon.ico` and `packaging/windows/app.manifest`.
 - Windows service: the agent installs/runs as a Windows service
   (`netflow-probe.exe -install -config …`) via `github.com/kardianos/service`.
+- Windows packaging: **portable ZIP** (`make windows-zip`) and **NSIS
+  installer** (`make windows-installer`, built with `makensis` from macOS/Linux).
+  Both bundle WinDivert and a Mesa `swgl/` "compatible mode" for VMs/RDP without
+  OpenGL 2.x. Tested on Windows 10 (silent install, shortcuts, uninstall and
+  reinstall). See `packaging/windows/README.md`.
 - Linux: the GUI now also builds for Linux (same Fyne app, `(darwin || windows ||
   linux) && cgo`). Capture needs `CAP_NET_RAW`; the GUI offers a `setcap`
   action (pkexec/sudo) and `scripts/build-linux.sh` builds GUI + agent.

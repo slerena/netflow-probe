@@ -23,10 +23,28 @@ Genera en `dist\`:
 El script usa `rsrc` (se descarga solo) para incrustar el icono (`AppIcon.ico`) y
 el manifiesto (`app.manifest`, con `requireAdministrator`).
 
+## Instalador y ZIP
+
+Además de los binarios sueltos, hay dos paquetes listos para distribuir (ver
+`packaging/windows/README.md`):
+
+- **ZIP portable**: `make windows-zip` →
+  `dist/Pandora FMS Netflow Probe <ver> (Windows).zip` con la GUI, el agente,
+  WinDivert y `swgl/` (Mesa) + `Modo compatible.bat`.
+- **Instalador NSIS**: `make windows-installer` →
+  `dist/Pandora FMS Netflow Probe Setup <ver>.exe` (licencia, componentes,
+  accesos directos y desinstalador). Se compila desde macOS/Linux con
+  `makensis` (`brew install makensis`), sin necesidad de Windows.
+
+El payload (`.exe` compilado + WinDivert + Mesa) va en
+`packaging/windows/payload/` (no versionado). Ver el README de packaging para
+la lista exacta de ficheros.
+
 ## WinDivert (captura)
 
-La captura la hace el driver **WinDivert**. Copia `WinDivert.dll` y
-`WinDivert64.sys` junto al `.exe` con:
+La captura la hace el driver **WinDivert**. El instalador y el ZIP **ya
+incluyen** `WinDivert.dll` + `WinDivert64.sys` junto al `.exe`. Si compilas a
+mano, cópialos con:
 
 ```powershell
 pwsh scripts\fetch-windivert.ps1
