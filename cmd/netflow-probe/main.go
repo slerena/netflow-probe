@@ -24,7 +24,7 @@ import (
 )
 
 // version is overridden at build time with -ldflags "-X main.version=...".
-var version = "1.0.34"
+var version = "1.0.35"
 
 // serviceName is the OS service identifier (Windows SCM, launchd, systemd).
 const serviceName = "PandoraFMSNetflowProbe"

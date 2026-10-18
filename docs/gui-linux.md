@@ -85,6 +85,26 @@ sudo install -Dm644 dist/netflow-probe.desktop /usr/share/applications/netflow-p
 sudo setcap cap_net_raw+ep /usr/local/bin/netflow-probe-gui
 ```
 
+## Instalador `.deb` (Ubuntu/Debian)
+
+La forma recomendada en Ubuntu es el paquete `.deb` (instala en `/usr/bin`, el
+menú, el icono y aplica `CAP_NET_RAW` solo):
+
+```sh
+# En Linux, con las dependencias de Fyne instaladas:
+make linux-deb          # -> dist/netflow-probe_<ver>_amd64.deb
+
+sudo apt install ./dist/netflow-probe_<ver>_amd64.deb
+# o: sudo dpkg -i dist/netflow-probe_<ver>_amd64.deb
+
+netflow-probe-gui       # desde el menú "Pandora FMS Netflow Probe"
+sudo apt remove netflow-probe
+```
+
+El `postinst` ejecuta `setcap cap_net_raw+ep` sobre `netflow-probe-gui` y
+`netflow-probe`; por eso el paquete depende de `libcap2-bin`. El CLI puede
+instalarse como servicio con `sudo netflow-probe -install -config …`.
+
 ## Empaquetado (opcional)
 
 `fyne package -os linux` genera un `.tar.xz`/AppImage con icono y `.desktop`; o

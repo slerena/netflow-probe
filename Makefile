@@ -3,7 +3,7 @@ PKG     := ./cmd/netflow-probe
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -s -w -X main.version=$(VERSION)
 
-.PHONY: all build test vet fmt tidy clean dist windows linux darwin macapp dmg linux-gui windows-zip windows-installer bump
+.PHONY: all build test vet fmt tidy clean dist windows linux darwin macapp dmg linux-gui linux-deb windows-zip windows-installer bump
 
 all: build
 
@@ -58,6 +58,10 @@ dmg:
 ## Linux GUI. Must run ON Linux with cgo + Fyne deps (see docs/gui-linux.md).
 linux-gui:
 	CGO_ENABLED=1 go build -trimpath -ldflags "$(LDFLAGS)" -o dist/$(BINARY)-gui ./cmd/netflow-probe-gui
+
+## Linux .deb installer (Ubuntu/Debian). Must run ON Linux.
+linux-deb:
+	bash packaging/linux/make_deb.sh
 
 ## Windows portable ZIP (needs packaging/windows/payload + Mesa; see docs/gui-windows.md)
 windows-zip:
